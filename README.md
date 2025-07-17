@@ -1,0 +1,77 @@
+
+The plan of execution
+
+Type : [Purchase_Order, Purchase_Invoice, Proforma_Invoice, Sales_Invoice, In_Stock]
+Product: [CO180G-RG, CO220G-RL, CO240G-RL, COLC220G-RG]
+Color: [black, white, red, blue, yellow]
+Size: [XS, S, M, L, XL, 2XL, 3XL, 4XL]
+Invoice: Unique_id (serialised)
+Data: Date of invoice
+GST: string
+isPaid: bool
+
+
+```json
+{
+  "type": "Sales_Invoice",
+  "invoice": "SK25CPQ10002",
+  "product_id": "CO240G-RL",
+  "date": "2025-07-16",
+  "gst": "0%",
+  "isPaid": false,
+  "Design": "Hades",
+  "rejected": false, 
+  "color": {
+    "black": {
+      "XS": 1,
+      "S": 1,
+      "M": 1,
+      "L": 1,
+      "XL": 1,
+      "2XL": 1,
+      "3XL": 1,
+      "4XL": 1
+    },
+    "red": {
+      "XS": 1,
+      "S": 1,
+      "M": 1,
+      "L": 1,
+      "XL": 1,
+      "2XL": 1,
+      "3XL": 1,
+      "4XL": 1
+    }
+  },
+  "total": 16 
+}
+
+```
+
+```csv
+Type, Invoice, Product_Id, Date, Gst, Design, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total
+Sales_Invoice, SK25CPQ10064, CO240G-RL, 7/3/2025, abc, Haded, Black, 1,1,1,1,1,1,1,1, 8
+```
+
+```sh
+lvs get stock
+lvs get stock <product_id>
+lvs get stock <product_id> --printed
+lvs get stock <product_id> --csv
+lvs get stock <product_id> --rejected/-r
+lvs get stock <product_id> --color/-c <color> --size/-s <size_name>
+lvs get invoice <invoice_id>
+lvs get entry <entry_id>
+
+```
+
+```sh
+lvs apply -f <file_name> 
+lvs apply -f <file_name> --approve 
+```
+
+```sh
+lvs delete invoice <invoice_id> --approve
+lvs delete entry <entry_id> --approve
+```
+
