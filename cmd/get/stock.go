@@ -1,21 +1,22 @@
 package get
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
 
-// rootCmd represents the base command when called without any subcommands
+	"github.com/spf13/cobra"
+)
+
+// stockCmd represents the stock command
 var stockCmd = &cobra.Command{
-	Use:   "stock",
-	Short: "to get stock details",
-	Long:  ``,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+	Use:     "stock <product_id>",
+	Short:   "Get stock details for a product",
+	Aliases: []string{"stocks", "stk"}, // 👈 Add "stocks" as an alias
+	Long:    `Fetches stock information for the given product ID.`,
+	Args:    cobra.ExactArgs(1), // Ensures exactly one argument is passed
 	Run: func(cmd *cobra.Command, args []string) {
-		help := cmd.Flag("help")
-		if help != nil && help.Value.String() == "true" {
-			// Show help information
-			cmd.Help()
-		}
-
+		productID := args[0]
+		fmt.Printf("Fetching stock details for product ID: %s\n", productID)
+		// Add your logic here to fetch and display stock info
 	},
 }
 
