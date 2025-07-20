@@ -17,6 +17,7 @@ Entry:
   "type": "Sales_Invoice",
   "invoice": "SK25CPQ10002",
   "product_id": "CO240G-RL",
+  "gen": "men/women/unisex",
   "date": "2025-07-16",
   "gst": "0%",
   "isPaid": false,
@@ -51,14 +52,6 @@ Product:
 ```
 
 
-
-
-
-```csv
-Type, Invoice, Product_Id, Date, Gst, Design, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total
-Sales_Invoice, SK25CPQ10064, CO240G-RL, 7/3/2025, abc, Hades, Black, 1,1,1,1,1,1,1,1, 8
-```
-
 ```sh
 lvs get stock
 lvs get stock <product_id>
@@ -68,6 +61,7 @@ lvs get stock <product_id> --rejected/-r
 lvs get stock <product_id> --color/-c <color> --size/-s <size_name>
 lvs get invoice <invoice_id>
 lvs get entry <entry_id>
+lvs get product <product_id>
 ```
 
 ```sh

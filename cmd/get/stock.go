@@ -1,9 +1,7 @@
 package get
 
 import (
-	"encoding/csv"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -18,39 +16,21 @@ var stockCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		productID := args[0]
 		if productID == "all" {
-			getStock()
+
+			fmt.Println("Function that would print the stock values")
+
 		}
 		fmt.Printf("Fetching stock details for product ID: %s\n", productID)
-		// Add your logic here to fetch and display stock info
+
 	},
 }
 
 func init() {
-	stockCmd.Flags().BoolP("help", "h", false, "Help message for toggle")
 	GetCmd.AddCommand(stockCmd)
-
-}
-
-func getStock() {
-	// Open the CSV file
-	file, err := os.Open("Data/inventory.csv")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	// Read the CSV data
-	reader := csv.NewReader(file)
-	reader.FieldsPerRecord = -1 // Allow variable number of fields
-	data, err := reader.ReadAll()
-	if err != nil {
-		panic(err)
-	}
-
-	// Print the CSV data
-	for _, row := range data {
-		for _, col := range row {
-			fmt.Printf("%s,", col)
-		}
-		fmt.Println()
-	}
+	stockCmd.Flags().BoolP("help", "h", false, "Help message for toggle")
+	stockCmd.Flags().Bool("csv", false, "Output in CSV format")
+	stockCmd.Flags().Bool("printed", false, "Show printed stock values")
+	stockCmd.Flags().BoolP("rejected", "r", false, "Show rejected stock values")
+	stockCmd.Flags().StringP("color", "c", "", "Show stock values for specific color only (e.g., red, green, blue)")
+	stockCmd.Flags().StringP("size", "s", "", "Show stock values for specific size only (e.g., S, M, L, XL, 2XL)")
 }
