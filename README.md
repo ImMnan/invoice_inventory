@@ -75,8 +75,8 @@ lvs delete entry <entry_id> --approve
 ```
 
 ``sh
-lvs create po
-lvs create po --pi <proforma_invoice>
+lvs add po
+lvs add po --pi <proforma_invoice>
 ```
 
 ```sh
