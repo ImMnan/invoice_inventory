@@ -7,7 +7,7 @@
       "date": "2025-07-10",
       "gst": "0%",
       "isPaid": false,
-      "Design": "",
+      "printed": "",
       "rejected": false, 
       "color": {
         "black": [2,2,2,2,2,2,2,2],
@@ -23,7 +23,7 @@
       "date": "2025-07-12",
       "gst": "0%",
       "isPaid": false,
-      "Design": "",
+      "printed": "",
       "rejected": false, 
       "color": {
         "black": [1,1,1,1,1,1,1,1],
@@ -32,14 +32,30 @@
       "total": 16 
     },
     {
-      "type": "In_stock",
+      "type": "in_stock",
       "invoice": "SK25CPQ10002",
       "product_id": "CO240G-RL",
       "gen": "men/women/unisex",
       "date": "2025-07-22",
       "gst": "0%",
       "isPaid": false,
-      "Design": "",
+      "printed": "",
+      "rejected": false, 
+      "color": {
+        "black": [1,1,1,1,1,1,1,1],
+        "red":   [1,1,1,1,1,1,1,1]
+        },
+      "total": 16 
+    },
+        {
+      "type": "in_stock",
+      "invoice": "SK25CPQ10004",
+      "product_id": "CO180G-RG",
+      "gen": "men/women/unisex",
+      "date": "2025-07-22",
+      "gst": "0%",
+      "isPaid": false,
+      "printed": "",
       "rejected": false, 
       "color": {
         "black": [1,1,1,1,1,1,1,1],
