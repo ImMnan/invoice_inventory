@@ -7,7 +7,7 @@
       "date": "2025-07-10",
       "gst": "0%",
       "isPaid": false,
-      "printed": "",
+      "print": "",
       "rejected": false, 
       "color": {
         "black": [2,2,2,2,2,2,2,2],
@@ -23,7 +23,7 @@
       "date": "2025-07-12",
       "gst": "0%",
       "isPaid": false,
-      "printed": "",
+      "print": "",
       "rejected": false, 
       "color": {
         "black": [1,1,1,1,1,1,1,1],
@@ -39,7 +39,7 @@
       "date": "2025-07-22",
       "gst": "0%",
       "isPaid": false,
-      "printed": "",
+      "print": "",
       "rejected": false, 
       "color": {
         "black": [1,1,1,1,1,1,1,1],
@@ -55,7 +55,7 @@
       "date": "2025-07-22",
       "gst": "0%",
       "isPaid": false,
-      "printed": "",
+      "print": "",
       "rejected": false, 
       "color": {
         "black": [1,1,1,1,1,1,1,1],

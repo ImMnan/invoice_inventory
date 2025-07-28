@@ -13,7 +13,7 @@ type TshirtStruct struct {
 	Invoice   string      `json:"invoice"`
 	Created   string      `json:"date"`
 	Gst       string      `json:"gst"`
-	Printed   string      `json:"printed"`
+	Print     string      `json:"print"`
 	Color     colorStruct `json:"color"`
 	Total     int         `json:"total"`
 	Rejected  bool        `json:"rejected"`

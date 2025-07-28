@@ -52,7 +52,7 @@ type Stocks struct {
 	Rejected  bool             `json:"rejected"`
 	IsPaid    bool             `json:"isPaid"`
 	Gen       string           `json:"gen"`
-	Printed   string           `json:"printed"` // Added Printed field
+	Print     string           `json:"print"` // Added Printed field
 }
 
 // StockFilter defines the filtering criteria for stocks
@@ -96,7 +96,7 @@ func (sf StockFilter) shouldShowPrinted(stock Stocks) bool {
 		return true
 	}
 	// If printed flag is set, only show stocks that have been printed
-	return stock.Printed != ""
+	return stock.Print != ""
 }
 
 // prepareSizes ensures we have exactly 8 size values, padding with 0 if necessary
@@ -123,7 +123,7 @@ func printStockRow(tabWriter *tabwriter.Writer, stock Stocks, colorName string, 
 		stock.ProductID,
 		stock.Type,
 		colorName,
-		stock.Printed,
+		stock.Print,
 		sizes[0], // XS
 		sizes[1], // S
 		sizes[2], // M
