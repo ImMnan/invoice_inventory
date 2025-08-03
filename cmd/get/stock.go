@@ -40,21 +40,6 @@ func init() {
 	stockCmd.Flags().StringP("color", "c", "", "Show stock values for specific color only (e.g., red, green, blue)")
 }
 
-type Stocks struct {
-	ID        string           `json:"id,omitempty"`
-	ProductID string           `json:"product_id"`
-	Type      string           `json:"type"`
-	Invoice   string           `json:"invoice"`
-	Created   string           `json:"date"`
-	Gst       string           `json:"gst"`
-	Color     map[string][]int `json:"color"`
-	Total     int              `json:"total"`
-	Rejected  bool             `json:"rejected"`
-	IsPaid    bool             `json:"isPaid"`
-	Gen       string           `json:"gen"`
-	Print     string           `json:"print"` // Added Printed field
-}
-
 // StockFilter defines the filtering criteria for stocks
 type StockFilter struct {
 	ProductID string
@@ -64,7 +49,7 @@ type StockFilter struct {
 }
 
 // shouldShowStock determines if a stock should be displayed based on the filter
-func (sf StockFilter) shouldShowStock(stock Stocks) bool {
+func (sf StockFilter) shouldShowStock(stock pkg.TshirtStruct) bool {
 	if stock.Type != "in_stock" {
 		return false
 	}
@@ -83,14 +68,14 @@ func (sf StockFilter) shouldShowStock(stock Stocks) bool {
 }
 
 // shouldShowColor determines if a specific color should be displayed
-func (sf StockFilter) shouldShowColor(stock Stocks, colorName string) bool {
+func (sf StockFilter) shouldShowColor(stock pkg.TshirtStruct, colorName string) bool {
 	if sf.ColorFlag == "" {
 		return true
 	}
 	return colorName == sf.ColorFlag
 }
 
-func (sf StockFilter) shouldShowPrinted(stock Stocks) bool {
+func (sf StockFilter) shouldShowPrinted(stock pkg.TshirtStruct) bool {
 	// If printed flag is not set, show all stocks regardless of printed status
 	if !sf.Printed {
 		return true
@@ -118,7 +103,7 @@ func calculateTotal(sizes []int) int {
 }
 
 // printStockRow prints a single row of stock data to the tabwriter
-func printStockRow(tabWriter *tabwriter.Writer, stock Stocks, colorName string, sizes []int, total int) {
+func printStockRow(tabWriter *tabwriter.Writer, stock pkg.TshirtStruct, colorName string, sizes []int, total int) {
 	fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
 		stock.ProductID,
 		stock.Type,
@@ -142,7 +127,7 @@ func printStocks(productID, colorFlag string, printedFlag bool) {
 		return
 	}
 
-	var stocks []Stocks
+	var stocks []pkg.TshirtStruct
 	err = json.Unmarshal(data, &stocks)
 	if err != nil {
 		fmt.Println("Error unmarshalling stock data:", err)
