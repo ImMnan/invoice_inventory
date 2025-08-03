@@ -1,6 +1,0 @@
-Type, Invoice, Product_Id, Date, Gst, Design, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total, Rejected, IsPaid
-Purchase, SK25CPQ10002, CO240G-RL, 7/3/2025, abc, Hades, Black, 1,1,1,1,1,1,1,1, 8, false, true
-Purchase, SK25CPQ10003, CO240G-RL, 7/3/2025, abc, Hades, White, 1,1,1,1,1,1,1,1, 8, false, true
-Sale, SK25CPQ10003, CO240G-RL, 7/15/2025, abc, Hades, White, 0,0,1,1,1,1,0,0, 4, false, true
-In_stock, na, CO240G-RL, 7/20/2025, na, na, White, 1,1,0,0,0,0,1,1, 4, false, true
-In_stock, na, CO240G-RL, 7/20/2025, na, na, Black, 1,1,1,1,1,1,1,1, 8, false, true

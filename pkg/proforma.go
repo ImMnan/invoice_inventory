@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
+
+	"github.com/google/uuid"
 )
 
-func Proforma(fileName string) ([]byte, error) {
+func getProforma(fileName string) ([]byte, error) {
 
 	poFile, err := os.Open(fileName)
 	if err != nil {
@@ -24,23 +28,47 @@ func Proforma(fileName string) ([]byte, error) {
 		if i == 0 { // Skip header row
 			continue
 		}
-		if len(row) < 6 {
+		if len(row) < 17 { // Ensure we have all required columns
 			continue
 		}
+
+		// Parse size quantities
+		colorMap := make(map[string][]int)
+		quantities := make([]int, 8)
+
+		// Parse quantities for each size (columns 8-15)
+		for j := 0; j < 8; j++ {
+			if qty, err := strconv.Atoi(strings.TrimSpace(row[8+j])); err == nil {
+				quantities[j] = qty
+			}
+		}
+
+		// Color is in column 7, use it as key for the map
+		color := strings.TrimSpace(row[7])
+		colorMap[color] = quantities
+
+		// Parse total (column 16)
+		total := 0
+		if totalStr := strings.TrimSpace(row[16]); totalStr != "" {
+			if t, err := strconv.Atoi(totalStr); err == nil {
+				total = t
+			}
+		}
+
 		proformaData = append(proformaData, TshirtStruct{
-			UUID:     row[0],
-			Type:     row[1],
-			Invoice:  row[2],
-			Date:     row[3],
-			IsPaid:   row[4] == "false",
-			Rejected: row[5] == "false",
+			UUID:     uuid.New().String(),
+			Type:     strings.TrimSpace(row[0]),
+			Invoice:  strings.TrimSpace(row[1]),
+			Date:     strings.TrimSpace(row[3]),
+			IsPaid:   false, // Default to false for proforma
+			Rejected: false, // Default to false for proforma
 			Product: ProductStruct{
-				UID:   row[6],
-				Print: row[7],
-				Gen:   row[8],
-				GST:   row[9],
-				Color: make(map[string][]int),
-				Total: 0,
+				UID:   strings.TrimSpace(row[2]), // Product_Id
+				Print: strings.TrimSpace(row[5]), // Print
+				Gen:   strings.TrimSpace(row[6]), // Gen
+				GST:   strings.TrimSpace(row[4]), // GST
+				Color: colorMap,
+				Total: total,
 			},
 		})
 	}
@@ -48,10 +76,219 @@ func Proforma(fileName string) ([]byte, error) {
 }
 
 func ApplyProforma(fileName string) {
-	proformaData, err := Proforma(fileName)
+	proformaData, err := getProforma(fileName)
 	if err != nil {
-		// Handle error
+		fmt.Printf("Error processing proforma: %v\n", err)
 		return
 	}
-	fmt.Print(string(proformaData))
+
+	//fmt.Print(string(proformaData))
+
+	if err := addProforma(proformaData); err != nil {
+		fmt.Printf("Error adding proforma: %v\n", err)
+		return
+	}
+}
+
+func addProforma(proformaData []byte) error {
+	inventory, err := os.Open("Data/inventory.json")
+	if err != nil {
+		return err
+	}
+	defer inventory.Close()
+	var stock []TshirtStruct
+
+	if err := json.NewDecoder(inventory).Decode(&stock); err != nil {
+		return err
+	}
+
+	// Parse proforma data
+	var proformaItems []TshirtStruct
+	if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
+		return fmt.Errorf("failed to parse proforma data: %v", err)
+	}
+
+	// Create sale entries and track stock changes
+	var saleEntries []TshirtStruct
+	stockUpdates := make(map[string]map[string][]int) // productUID -> color -> quantities
+
+	for _, proformaItem := range proformaItems {
+		// Create a sale entry from the proforma item
+		saleEntry := TshirtStruct{
+			UUID:     uuid.New().String(),
+			Type:     "sale",
+			Invoice:  proformaItem.Invoice,
+			Date:     proformaItem.Date,
+			IsPaid:   false,
+			Rejected: false,
+			Product: ProductStruct{
+				UID:   proformaItem.Product.UID,
+				Print: proformaItem.Product.Print,
+				Gen:   proformaItem.Product.Gen,
+				GST:   proformaItem.Product.GST,
+				Color: make(map[string][]int),
+				Total: proformaItem.Product.Total,
+			},
+		}
+
+		// Copy color data to sale entry (normalize color keys to lowercase)
+		for color, quantities := range proformaItem.Product.Color {
+			saleEntry.Product.Color[strings.ToLower(color)] = quantities
+		}
+
+		saleEntries = append(saleEntries, saleEntry)
+
+		// Initialize stock updates for this product if not exists
+		if stockUpdates[proformaItem.Product.UID] == nil {
+			stockUpdates[proformaItem.Product.UID] = make(map[string][]int)
+		}
+
+		// Track quantities to subtract from stock
+		for color, quantities := range proformaItem.Product.Color {
+			colorKey := strings.ToLower(color)
+			if existing, exists := stockUpdates[proformaItem.Product.UID][colorKey]; exists {
+				// Add to existing quantities
+				for i, qty := range quantities {
+					if i < len(existing) {
+						existing[i] += qty
+					}
+				}
+			} else {
+				// Create new entry
+				stockUpdates[proformaItem.Product.UID][colorKey] = make([]int, len(quantities))
+				copy(stockUpdates[proformaItem.Product.UID][colorKey], quantities)
+			}
+		}
+	}
+
+	// Collect current stock state and apply subtractions
+	currentStock := make(map[string]map[string][]int) // productUID -> color -> quantities
+
+	// First, collect all existing in_stock data
+	for _, item := range stock {
+		if item.Type == "in_stock" {
+			if currentStock[item.Product.UID] == nil {
+				currentStock[item.Product.UID] = make(map[string][]int)
+			}
+			for color, quantities := range item.Product.Color {
+				currentStock[item.Product.UID][color] = make([]int, len(quantities))
+				copy(currentStock[item.Product.UID][color], quantities)
+			}
+		}
+	}
+
+	// Apply subtractions to the inventory
+	if err := proformaCal(stockUpdates, currentStock); err != nil {
+		return fmt.Errorf("error during proforma calculation: %v", err)
+	}
+
+	// Remove all existing in_stock entries and keep other entries
+	if err := consolidation(stock, saleEntries, currentStock); err != nil {
+		return fmt.Errorf("error during consolidation: %v", err)
+	}
+	return nil
+}
+
+func proformaCal(stockUpdates, currentStock map[string]map[string][]int) error {
+
+	for productUID, colors := range stockUpdates {
+		if currentStock[productUID] != nil {
+			for color, subtractQuantities := range colors {
+				// Try to find matching color (case-insensitive)
+				var matchingStockColor string
+				var stockQuantities []int
+				found := false
+
+				for stockColor, quantities := range currentStock[productUID] {
+					if strings.EqualFold(stockColor, color) {
+						matchingStockColor = stockColor
+						stockQuantities = quantities
+						found = true
+						break
+					}
+				}
+
+				if found {
+					for i, subtractQty := range subtractQuantities {
+						if i < len(stockQuantities) {
+							if stockQuantities[i] >= subtractQty {
+								stockQuantities[i] -= subtractQty
+								// Uncomment for debugging
+								//fmt.Printf("Subtracting %d from %s %s size %d: %d -> %d\n", subtractQty, productUID, color, i, stockQuantities[i]+subtractQty, stockQuantities[i])
+							} else {
+								return fmt.Errorf("\nerror: not enough stock for %s %s size %d. available: %d, requested: %d",
+									productUID, color, i, stockQuantities[i], subtractQty)
+							}
+						}
+					}
+					currentStock[productUID][matchingStockColor] = stockQuantities
+				} else {
+					return fmt.Errorf("\nerror: color '%s' not found in existing stock for product %s", color, productUID)
+				}
+			}
+		} else {
+			// New product - initialize with zero stock but include the colors
+			//fmt.Printf("Creating new stock entry for product %s\n", productUID)
+			currentStock[productUID] = make(map[string][]int)
+			for color, quantities := range colors {
+				// Initialize with zeros since we don't have initial stock
+				currentStock[productUID][color] = make([]int, len(quantities))
+				fmt.Printf("Warning: New product %s %s introduced with zero initial stock\n", productUID, color)
+			}
+		}
+	}
+	return nil
+}
+
+func consolidation(stock, saleEntries []TshirtStruct, currentStock map[string]map[string][]int) error {
+	var finalStock []TshirtStruct
+	for _, item := range stock {
+		if item.Type != "in_stock" {
+			finalStock = append(finalStock, item)
+		}
+	}
+
+	// Add sale entries
+	finalStock = append(finalStock, saleEntries...)
+
+	// Create new consolidated in_stock entries for all products
+	for productUID, colors := range currentStock {
+		total := 0
+		for _, quantities := range colors {
+			for _, qty := range quantities {
+				total += qty
+			}
+		}
+
+		// Create in_stock entry even if total is 0 (to show zero stock)
+		newStockEntry := TshirtStruct{
+			UUID:     uuid.New().String(),
+			Type:     "in_stock",
+			Invoice:  "NA",
+			IsPaid:   false,
+			Rejected: false,
+			Product: ProductStruct{
+				UID:   productUID,
+				Print: "",
+				Gen:   "men/women/unisex",
+				GST:   "0%",
+				Color: colors,
+				Total: total,
+			},
+		}
+		finalStock = append(finalStock, newStockEntry)
+	}
+
+	// Write updated inventory back to file
+	updatedData, err := json.MarshalIndent(finalStock, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated inventory: %v", err)
+	}
+
+	if err := os.WriteFile("Data/inventory.json", updatedData, 0644); err != nil {
+		return fmt.Errorf("failed to write updated inventory: %v", err)
+	}
+
+	//fmt.Printf("\nSuccessfully updated inventory. Added %d sale entries and updated in_stock quantities.\n", len(saleEntries))
+	return nil
 }
