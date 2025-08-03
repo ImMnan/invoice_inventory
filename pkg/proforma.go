@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func getProforma(fileName string) ([]byte, error) {
+func GetProforma(fileName string) ([]byte, error) {
 
 	poFile, err := os.Open(fileName)
 	if err != nil {
@@ -72,18 +72,18 @@ func getProforma(fileName string) ([]byte, error) {
 			},
 		})
 	}
+	for i, item := range proformaData {
+		fmt.Printf("Proforma %d: %+v\n", i+1, item)
+	}
 	return json.Marshal(proformaData)
 }
 
 func ApplyProforma(fileName string) {
-	proformaData, err := getProforma(fileName)
+	proformaData, err := GetProforma(fileName)
 	if err != nil {
 		fmt.Printf("Error processing proforma: %v\n", err)
 		return
 	}
-
-	//fmt.Print(string(proformaData))
-
 	if err := addProforma(proformaData); err != nil {
 		fmt.Printf("Error adding proforma: %v\n", err)
 		return
@@ -154,7 +154,7 @@ func addProforma(proformaData []byte) error {
 					}
 				}
 			} else {
-				// Create new entry
+				// Initialize with current quantities
 				stockUpdates[proformaItem.Product.UID][colorKey] = make([]int, len(quantities))
 				copy(stockUpdates[proformaItem.Product.UID][colorKey], quantities)
 			}
@@ -227,14 +227,8 @@ func proformaCal(stockUpdates, currentStock map[string]map[string][]int) error {
 				}
 			}
 		} else {
-			// New product - initialize with zero stock but include the colors
-			//fmt.Printf("Creating new stock entry for product %s\n", productUID)
-			currentStock[productUID] = make(map[string][]int)
-			for color, quantities := range colors {
-				// Initialize with zeros since we don't have initial stock
-				currentStock[productUID][color] = make([]int, len(quantities))
-				fmt.Printf("Warning: New product %s %s introduced with zero initial stock\n", productUID, color)
-			}
+			// New product - check if we're trying to subtract from non-existent stock
+			return fmt.Errorf("\nerror: product '%s' not found in existing stock", productUID)
 		}
 	}
 	return nil
@@ -242,42 +236,37 @@ func proformaCal(stockUpdates, currentStock map[string]map[string][]int) error {
 
 func consolidation(stock, saleEntries []TshirtStruct, currentStock map[string]map[string][]int) error {
 	var finalStock []TshirtStruct
+
+	// Keep all existing entries except in_stock entries that were updated
 	for _, item := range stock {
-		if item.Type != "in_stock" {
+		if item.Type == "in_stock" {
+			// Check if this product was updated in currentStock
+			if updatedColors, exists := currentStock[item.Product.UID]; exists {
+				// Calculate new total for updated stock
+				total := 0
+				for _, quantities := range updatedColors {
+					for _, qty := range quantities {
+						total += qty
+					}
+				}
+				//fmt.Printf("Updating: %s\n colors: %v\n total %d\n", item.Product.UID, updatedColors, total)
+				// Update the existing in_stock entry with new quantities
+				updatedStockEntry := item
+				updatedStockEntry.Product.Color = updatedColors
+				updatedStockEntry.Product.Total = total
+				finalStock = append(finalStock, updatedStockEntry)
+			} else {
+				// Keep unchanged in_stock entries as is
+				finalStock = append(finalStock, item)
+			}
+		} else {
+			// Keep all non-stock entries (purchases, sales, etc.)
 			finalStock = append(finalStock, item)
 		}
 	}
 
-	// Add sale entries
+	// Add new sale entries
 	finalStock = append(finalStock, saleEntries...)
-
-	// Create new consolidated in_stock entries for all products
-	for productUID, colors := range currentStock {
-		total := 0
-		for _, quantities := range colors {
-			for _, qty := range quantities {
-				total += qty
-			}
-		}
-
-		// Create in_stock entry even if total is 0 (to show zero stock)
-		newStockEntry := TshirtStruct{
-			UUID:     uuid.New().String(),
-			Type:     "in_stock",
-			Invoice:  "NA",
-			IsPaid:   false,
-			Rejected: false,
-			Product: ProductStruct{
-				UID:   productUID,
-				Print: "",
-				Gen:   "men/women/unisex",
-				GST:   "0%",
-				Color: colors,
-				Total: total,
-			},
-		}
-		finalStock = append(finalStock, newStockEntry)
-	}
 
 	// Write updated inventory back to file
 	updatedData, err := json.MarshalIndent(finalStock, "", "  ")
@@ -289,6 +278,6 @@ func consolidation(stock, saleEntries []TshirtStruct, currentStock map[string]ma
 		return fmt.Errorf("failed to write updated inventory: %v", err)
 	}
 
-	//fmt.Printf("\nSuccessfully updated inventory. Added %d sale entries and updated in_stock quantities.\n", len(saleEntries))
+	fmt.Printf("\nSuccessfully updated inventory. Added %d sale entries and updated in_stock quantities.\n", len(saleEntries))
 	return nil
 }
