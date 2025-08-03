@@ -7,21 +7,23 @@ import (
 )
 
 type TshirtStruct struct {
-	ID        string      `json:"id,omitempty"`
-	ProductID string      `json:"product_id"`
-	Type      string      `json:"type"`
-	Invoice   string      `json:"invoice"`
-	Created   string      `json:"date"`
-	Gst       string      `json:"gst"`
-	Print     string      `json:"print"`
-	Color     colorStruct `json:"color"`
-	Total     int         `json:"total"`
-	Rejected  bool        `json:"rejected"`
-	IsPaid    bool        `json:"isPaid"`
-	Gen       string      `json:"gen"`
+	UUID     string        `json:"uuid"`
+	Type     string        `json:"type"`
+	Invoice  string        `json:"invoice"`
+	Date     string        `json:"date,omitempty"`
+	IsPaid   bool          `json:"isPaid"`
+	Rejected bool          `json:"rejected"`
+	Product  ProductStruct `json:"product"`
 }
 
-type colorStruct map[string][]int
+type ProductStruct struct {
+	UID   string           `json:"uid"`
+	Print string           `json:"print"`
+	Gen   string           `json:"gen"`
+	GST   string           `json:"gst"`
+	Color map[string][]int `json:"color"`
+	Total int              `json:"total"`
+}
 
 func Stocks() ([]byte, error) {
 	// open and read json

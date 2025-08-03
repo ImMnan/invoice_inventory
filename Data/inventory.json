@@ -1,66 +1,77 @@
 [
     {
-      "type": "Purchase",
+      "uuid": "1001",
+      "type": "purchase",
       "invoice": "SK25CPQ10002",
-      "product_id": "CO240G-RL",
-      "gen": "men/women/unisex",
       "date": "2025-07-10",
-      "gst": "0%",
       "isPaid": false,
-      "print": "",
-      "rejected": false, 
-      "color": {
+      "rejected": false,
+      "product": {
+        "uid": "CO240G-RL",
+        "print": "",
+        "gen": "men/women/unisex",
+        "gst": "0%",
+        "color": {
         "black": [2,2,2,2,2,2,2,2],
         "red":   [2,2,2,2,2,2,2,2]
         },
-      "total": 32 
+        "total": 32
+      }
     },
     {
-      "type": "Sale",
+      "uuid": "1002",
+      "type": "sale",
       "invoice": "SK25CPQ10002",
-      "product_id": "CO240G-RL",
-      "gen": "men/women/unisex",
       "date": "2025-07-12",
-      "gst": "0%",
       "isPaid": false,
-      "print": "",
-      "rejected": false, 
-      "color": {
-        "black": [1,1,1,1,1,1,1,1],
-        "red":   [1,1,1,1,1,1,1,1]
+      "rejected": false,
+      "product": {
+        "uid": "CO240G-RL",
+        "print": "",
+        "gen": "men/women/unisex",
+        "gst": "0%",
+        "color": {
+          "black": [1,1,1,1,1,1,1,1],
+          "red":   [1,1,1,1,1,1,1,1]
         },
-      "total": 16 
+        "total": 16
+      }
     },
     {
+      "uuid": "1003",
       "type": "in_stock",
-      "invoice": "SK25CPQ10002",
-      "product_id": "CO240G-RL",
-      "gen": "men/women/unisex",
-      "date": "2025-07-22",
-      "gst": "0%",
+      "invoice": "NA",
       "isPaid": false,
-      "print": "",
-      "rejected": false, 
-      "color": {
-        "black": [1,1,1,1,1,1,1,1],
-        "red":   [1,1,1,1,1,1,1,1]
+      "rejected": false,
+      "product": {
+        "uid": "CO240G-RL",
+        "print": "",
+        "gen": "men/women/unisex",
+        "gst": "0%",
+        "color": {
+        "black": [2,2,2,2,2,2,2,2],
+        "red":   [2,2,2,2,2,2,2,2]
         },
-      "total": 16 
+        "total": 32
+      }
     },
-        {
+   {
+      "uuid": "1004",
       "type": "in_stock",
-      "invoice": "SK25CPQ10004",
-      "product_id": "CO180G-RG",
-      "gen": "men/women/unisex",
+      "invoice": "NA",
       "date": "2025-07-22",
-      "gst": "0%",
       "isPaid": false,
-      "print": "",
       "rejected": false, 
-      "color": {
-        "black": [1,1,1,1,1,1,1,1],
-        "red":   [1,1,1,1,1,1,1,1]
+      "product": {
+        "uid": "CO240G-RL",
+        "print": "",
+        "gen": "men/women/unisex",
+        "gst": "0%",
+        "color": {
+          "black": [1,1,1,1,1,1,1,1],
+          "red":   [1,1,1,1,1,1,1,1]
         },
-      "total": 16 
+        "total": 16
+      }
     }
 ]

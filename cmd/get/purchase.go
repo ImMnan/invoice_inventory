@@ -11,11 +11,11 @@ import (
 )
 
 // stockCmd represents the stock command
-var stockCmd = &cobra.Command{
-	Use:     "stock [product_id]",
-	Short:   "Get stock details for a product",
-	Aliases: []string{"stocks", "stk"}, // added alias
-	Long:    `Fetches stock information for the given product ID. If no product_id is provided, shows all stocks.`,
+var purchaseCmd = &cobra.Command{
+	Use:     "purchase",
+	Short:   "Get purchase details for a product",
+	Aliases: []string{"purchases", "pr"}, // added alias
+	Long:    `Fetches purchase information for the given product ID. If no product_id is provided, shows all purchases.`,
 	Args:    cobra.MaximumNArgs(1), // Allows 0 or 1 argument
 	Run: func(cmd *cobra.Command, args []string) {
 		var productID string
@@ -27,28 +27,27 @@ var stockCmd = &cobra.Command{
 		colorFlag, _ := cmd.Flags().GetString("color")
 		printedFlag, _ := cmd.Flags().GetBool("printed")
 
-		printStocks(productID, colorFlag, printedFlag)
+		printPurchases(productID, colorFlag, printedFlag)
 	},
 }
 
 func init() {
-	GetCmd.AddCommand(stockCmd)
-	stockCmd.Flags().BoolP("help", "h", false, "Help message for toggle")
-	stockCmd.Flags().Bool("csv", false, "Output in CSV format")
-	stockCmd.Flags().BoolP("printed", "p", false, "Show printed stock values")
-	//	stockCmd.Flags().BoolP("rejected", "r", false, "Show rejected stock values")
-	stockCmd.Flags().StringP("color", "c", "", "Show stock values for specific color only (e.g., red, green, blue)")
+	GetCmd.AddCommand(purchaseCmd)
+	purchaseCmd.Flags().BoolP("help", "h", false, "Help message for toggle")
+	purchaseCmd.Flags().Bool("csv", false, "Output in CSV format")
+	purchaseCmd.Flags().BoolP("printed", "p", false, "Show printed purchase values")
+	//	purchaseCmd.Flags().BoolP("rejected", "r", false, "Show rejected purchase values")
+	purchaseCmd.Flags().StringP("color", "c", "", "Show purchase values for specific color only (e.g., red, green, blue)")
 }
 
-// StockFilter defines the filtering criteria for stocks
-type StockFilter struct {
+type PurchaseFilter struct {
 	ProductID string
 	ColorFlag string
 	ShowAll   bool
 	Printed   bool
 }
 
-func printStocks(productID, colorFlag string, printedFlag bool) {
+func printPurchases(productID, colorFlag string, printedFlag bool) {
 	data, err := pkg.Stocks()
 	if err != nil {
 		fmt.Println("Error fetching stock data:", err)
@@ -77,7 +76,7 @@ func printStocks(productID, colorFlag string, printedFlag bool) {
 	}
 
 	for _, stock := range stocks {
-		if !filter.shouldShowStock(stock) {
+		if !filter.shouldShowPurchases(stock) {
 			continue
 		}
 		if !filter.shouldShowPrinted(stock) {
@@ -88,6 +87,7 @@ func printStocks(productID, colorFlag string, printedFlag bool) {
 			if !filter.shouldShowColor(colorName) {
 				continue
 			}
+
 			sizes := prepareSizes(sizeArray)
 			total := calculateTotal(sizes)
 			printStockRow(tabWriter, stock, colorName, sizes, total)

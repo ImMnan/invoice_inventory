@@ -1,3 +1,4 @@
-Type, Invoice, Product_Id, Date, Gst, Print, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total
-Proforma_Invoice, 12, CO240G-RL, 7/3/2025, abc, Hades, Black, 1,1,1,1,1,1,1,1, 8
-Proforma_Invoice, 13, CO240G-RL, 7/3/2025, abc, Hades, White, 1,1,1,1,1,1,1,1, 8
+Type, Invoice, Product_Id, Date, Gst, Print, Gen, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total
+pro-forma, 12, CO180G-RG, 7/3/2025, 0, Hades, Male, Black, 1,1,1,1,1,1,1,1, 8
+pro-forma, 12, CO180G-RG, 7/3/2025, 0, Goku, Male, Red, 1,1,1,1,1,1,1,1, 8
+pro-forma, 13, CO240G-RL, 7/3/2025, 0, Hades, Male, Black, 1,1,1,1,1,1,1,1, 8
