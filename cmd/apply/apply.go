@@ -53,7 +53,8 @@ func applyProforma(fileName string, confirm bool) {
 			fmt.Printf("  Product UID: %s\n", item.Product.UID)
 			fmt.Printf("  Print: %s\n", item.Product.Print)
 			fmt.Printf("  Gen: %s\n", item.Product.Gen)
-			fmt.Printf("  GST: %vf\n", item.Product.GST)
+			fmt.Printf("  GST: %s\n", item.Product.GST)
+			fmt.Printf("  Price: %d\n", item.Product.Price)
 			for color, quantities := range item.Product.Color {
 				fmt.Printf("  Color: %s, XS/S/M/L/XL/2XL/3XL/4XL: %v\n", color, quantities)
 			}
@@ -61,7 +62,7 @@ func applyProforma(fileName string, confirm bool) {
 		}
 	}
 	if confirm {
-		fmt.Println("Changes approved. Applying proforma to the database...")
+		//	fmt.Println("Changes approved. Applying proforma to the database...")
 		if err := pkg.ApplyProforma(fileName); err != nil {
 			panic(fmt.Sprintf("Error applying proforma: %v", err))
 		}

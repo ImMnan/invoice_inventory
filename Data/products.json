@@ -1,22 +1,21 @@
 [
     {
         "product_id": "CO180G-RG",
-        "name": "100% Cotton T-Shirt Bio-Washed",
+        "name": "Cotton Regular-fit T-Shirt",
         "colors": {
             "black": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"],
             "red": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"]
         },
-        "description": "A comfortable and stylish t-shirt made from 100% cotton, perfect for everyday wear.",
-        "price": 200
+        "description": "A comfortable and stylish t-shirt made from 100% cotton, perfect for everyday wear."
+    
     },
     {
         "product_id": "CO240G-RL",
-        "name": "100% Cotton T-Shirt Bio-Washed",
+        "name": "Cotton Relaxed-fit T-Shirt",
         "colors": {
             "black": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"],
             "red": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"]
         },
-        "description": "A comfortable and stylish t-shirt made from 100% cotton, perfect for everyday wear.",
-        "price": 200
+        "description": "A comfortable and stylish t-shirt made from 100% cotton, perfect for everyday wear."
     }
 ]

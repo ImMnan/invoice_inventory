@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 )
 
 type Invoice struct {
@@ -83,10 +84,12 @@ func makeInvoice(proformaData []byte, format string, invoiceGroups map[string][]
 		if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
 			return fmt.Errorf("failed to parse proforma data: %v", err)
 		}
-		// Create a map to lookup print data from proforma items
+		// Create a map to lookup print and price data from proforma items
 		printMap := make(map[string]string)
+		priceMap := make(map[string]float64)
 		for _, item := range proformaItems {
 			printMap[item.Product.UID] = item.Product.Print
+			priceMap[item.Product.UID] = float64(item.Product.Price)
 		}
 
 		// Load customer data first to validate
@@ -123,23 +126,26 @@ func makeInvoice(proformaData []byte, format string, invoiceGroups map[string][]
 		}
 
 		if format == "table" {
-			fmt.Println("\nSHIRIKRISHNA TECH\n GST: 1234567890\n INDIA\n-----")
-
-			invoiceTab := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+			fmt.Println("\nFROM: SHIRIKRISHNA TECH\nGST: 1234567890\nCOO: INDIA\nCONTACT: 9725359497\n---")
+			invoiceTab := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 			// Print invoice header
-			fmt.Fprintln(invoiceTab, "\nTYPE\tINVOICE\tDATE")
-			fmt.Fprintf(invoiceTab, "%s\t%s\t%s\n", "Sales Invoice", invoiceID, "2023-01-01")
-			invoiceTab.Flush()
-
-			customerTab := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			// Print customer details first
-			fmt.Fprintln(customerTab, "\nNAME\tADDRESS\tGST NUMBER")
-			fmt.Fprintf(customerTab, "%s\t%s\t%s\n\n",
+			fmt.Fprintln(invoiceTab, "\nTYPE\tINVOICE\tNAME\tADDRESS\tGST NUMBER\tDATE")
+			fmt.Fprintf(invoiceTab, "%s\t%s\t%s\t%s\t%s\t%s\n\n", "Sales Invoice",
+				invoiceID,
 				selectedCustomer.Name,
 				selectedCustomer.Address,
-				selectedCustomer.GstNumber)
+				selectedCustomer.GstNumber,
+				time.Now().Format("2006-01-02"))
+			invoiceTab.Flush()
+			//	customerTab := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+			// Print customer details first
+			//	fmt.Fprintln(customerTab, "\nNAME\tADDRESS\tGST NUMBER")
+			//	fmt.Fprintf(customerTab, "%s\t%s\t%s\n\n",
+			//		selectedCustomer.Name,
+			//		selectedCustomer.Address,
+			//		selectedCustomer.GstNumber)
 
-			customerTab.Flush()
+			//			customerTab.Flush()
 
 			// Use tabwriter for aligned table output
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -165,7 +171,13 @@ func makeInvoice(proformaData []byte, format string, invoiceGroups map[string][]
 					}
 
 					// Calculate amount (price × total)
-					amount := productInfo.Price * float64(total)
+					// Get price data from proforma
+					price := priceMap[productId]
+					if price == 0 {
+						// Fallback to products.json if no price in proforma
+						price = productInfo.Price
+					}
+					amount := price * float64(total)
 
 					// Get print data from proforma
 					printValue := printMap[productId]
@@ -177,7 +189,7 @@ func makeInvoice(proformaData []byte, format string, invoiceGroups map[string][]
 					line := fmt.Sprintf("%s\t%s\t%.0f\t%s\t%s",
 						productId,
 						productInfo.Name,
-						productInfo.Price,
+						price,
 						printValue,
 						color,
 					)
@@ -219,7 +231,13 @@ func makeInvoice(proformaData []byte, format string, invoiceGroups map[string][]
 					}
 
 					// Calculate amount (price × total)
-					amount := productInfo.Price * float64(total)
+					// Get price data from proforma
+					price := priceMap[productId]
+					if price == 0 {
+						// Fallback to products.json if no price in proforma
+						price = productInfo.Price
+					}
+					amount := price * float64(total)
 
 					// Get print data from proforma
 					printValue := printMap[productId]
@@ -231,7 +249,7 @@ func makeInvoice(proformaData []byte, format string, invoiceGroups map[string][]
 					line := fmt.Sprintf("%s,%s,%.0f,%s,%s",
 						productId,
 						productInfo.Name,
-						productInfo.Price,
+						price,
 						printValue,
 						color)
 

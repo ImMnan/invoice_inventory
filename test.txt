@@ -1,0 +1,12 @@
+FROM: SHIRIKRISHNA TECH
+GST: 1234567890
+COO: INDIA
+CONTACT: 9725359497
+---
+
+TYPE             INVOICE    NAME     ADDRESS     GST NUMBER           DATE
+Sales Invoice    13         GJ 21    Bilimora    27AA3rFRK1234C1Z5    2025-08-04
+
+PRODUCT ID  PRODUCT Name                PRICE  PRINT  COLOR  XS  S   M   L   XL  2X  3X  4X  TOTAL  AMOUNT
+----------  ------------                -----  -----  -----  --  --  --  --  --  --  --  --  ----   ----
+CO240G-RL   Cotton Relaxed-fit T-Shirt  200    Hades  black  1   1   1   1   1   1   1   1   8      1600

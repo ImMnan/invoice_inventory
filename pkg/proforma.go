@@ -50,18 +50,18 @@ func GetProforma(fileName string) ([]byte, error) {
 
 		// Parse quantities for each size (columns 8-15)
 		for j := 0; j < 8; j++ {
-			if qty, err := strconv.Atoi(strings.TrimSpace(row[9+j])); err == nil {
+			if qty, err := strconv.Atoi(strings.TrimSpace(row[10+j])); err == nil {
 				quantities[j] = qty
 			}
 		}
 
-		// Color is in column 7, use it as key for the map
-		color := strings.TrimSpace(row[8])
+		// Color is in column 9, use it as key for the map
+		color := strings.TrimSpace(row[9])
 		colorMap[color] = quantities
 
 		// Parse total (column 16)
 		total := 0
-		if totalStr := strings.TrimSpace(row[17]); totalStr != "" {
+		if totalStr := strings.TrimSpace(row[18]); totalStr != "" {
 			if t, err := strconv.Atoi(totalStr); err == nil {
 				total = t
 			}
@@ -77,9 +77,16 @@ func GetProforma(fileName string) ([]byte, error) {
 			Rejected: false, // Default to false for proforma
 			Product: ProductStruct{
 				UID:   strings.TrimSpace(row[3]), // Product_Id
-				Print: strings.TrimSpace(row[6]), // Print
-				Gen:   strings.TrimSpace(row[7]), // Gen
-				GST:   strings.TrimSpace(row[5]), // GST
+				Print: strings.TrimSpace(row[7]), // Print
+				Gen:   strings.TrimSpace(row[8]), // Gen
+				Price: func() int {
+					priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
+					if err != nil {
+						return 0
+					}
+					return priceInt
+				}(),
+				GST:   strings.TrimSpace(row[6]), // GST as string
 				Color: colorMap,
 				Total: total,
 			},
@@ -135,7 +142,7 @@ func ApplyProforma(fileName string) error {
 		return fmt.Errorf("no invoice IDs found in proforma data")
 	}
 
-	fmt.Printf("\nProcessed and generated %d invoices\n", len(invoiceGroups))
+	//	fmt.Printf("\nProcessed and generated %d invoices\n", len(invoiceGroups))
 	return nil
 
 }
@@ -331,6 +338,6 @@ func consolidation(stock, saleEntries []Proforma, currentStock map[string]map[st
 		return fmt.Errorf("failed to write updated inventory: %v", err)
 	}
 
-	fmt.Printf("\nSuccessfully updated inventory. Added %d sale entries and updated in_stock quantities.\n", len(saleEntries))
+	//fmt.Printf("\nSuccessfully updated inventory. Added %d sale entries and updated in_stock quantities.\n", len(saleEntries))
 	return nil
 }
