@@ -23,6 +23,7 @@ type ProductStruct struct {
 	GST   string           `json:"gst"`
 	Color map[string][]int `json:"color"`
 	Total int              `json:"total"`
+	Price int              `json:"price"`
 }
 
 func Stocks() ([]byte, error) {

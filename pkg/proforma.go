@@ -11,6 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
+type Proforma struct {
+	UUID     string        `json:"uuid"`
+	Type     string        `json:"type"`
+	For      string        `json:"for,omitempty"`
+	Invoice  string        `json:"invoice"`
+	Date     string        `json:"date,omitempty"`
+	IsPaid   bool          `json:"isPaid"`
+	Rejected bool          `json:"rejected"`
+	Product  ProductStruct `json:"product"`
+}
+
 func GetProforma(fileName string) ([]byte, error) {
 
 	poFile, err := os.Open(fileName)
@@ -23,12 +34,12 @@ func GetProforma(fileName string) ([]byte, error) {
 		return nil, err
 	}
 
-	var proformaData []TshirtStruct
+	var proformaData []Proforma
 	for i, row := range poData {
 		if i == 0 { // Skip header row
 			continue
 		}
-		if len(row) < 17 { // Ensure we have all required columns
+		if len(row) < 18 { // Ensure we have all required columns
 			continue
 		}
 
@@ -38,56 +49,53 @@ func GetProforma(fileName string) ([]byte, error) {
 
 		// Parse quantities for each size (columns 8-15)
 		for j := 0; j < 8; j++ {
-			if qty, err := strconv.Atoi(strings.TrimSpace(row[8+j])); err == nil {
+			if qty, err := strconv.Atoi(strings.TrimSpace(row[9+j])); err == nil {
 				quantities[j] = qty
 			}
 		}
 
 		// Color is in column 7, use it as key for the map
-		color := strings.TrimSpace(row[7])
+		color := strings.TrimSpace(row[8])
 		colorMap[color] = quantities
 
 		// Parse total (column 16)
 		total := 0
-		if totalStr := strings.TrimSpace(row[16]); totalStr != "" {
+		if totalStr := strings.TrimSpace(row[17]); totalStr != "" {
 			if t, err := strconv.Atoi(totalStr); err == nil {
 				total = t
 			}
 		}
 
-		proformaData = append(proformaData, TshirtStruct{
+		proformaData = append(proformaData, Proforma{
 			UUID:     uuid.New().String(),
 			Type:     strings.TrimSpace(row[0]),
 			Invoice:  strings.TrimSpace(row[1]),
-			Date:     strings.TrimSpace(row[3]),
+			For:      strings.TrimSpace(row[2]), // For field
+			Date:     strings.TrimSpace(row[4]),
 			IsPaid:   false, // Default to false for proforma
 			Rejected: false, // Default to false for proforma
 			Product: ProductStruct{
-				UID:   strings.TrimSpace(row[2]), // Product_Id
-				Print: strings.TrimSpace(row[5]), // Print
-				Gen:   strings.TrimSpace(row[6]), // Gen
-				GST:   strings.TrimSpace(row[4]), // GST
+				UID:   strings.TrimSpace(row[3]), // Product_Id
+				Print: strings.TrimSpace(row[6]), // Print
+				Gen:   strings.TrimSpace(row[7]), // Gen
+				GST:   strings.TrimSpace(row[5]), // GST
 				Color: colorMap,
 				Total: total,
 			},
 		})
 	}
-	for i, item := range proformaData {
-		fmt.Printf("Proforma %d: %+v\n", i+1, item)
-	}
 	return json.Marshal(proformaData)
 }
 
-func ApplyProforma(fileName string) {
+func ApplyProforma(fileName string) error {
 	proformaData, err := GetProforma(fileName)
 	if err != nil {
-		fmt.Printf("Error processing proforma: %v\n", err)
-		return
+		return fmt.Errorf("\nerror processing proforma:\n %v", err)
 	}
 	if err := addProforma(proformaData); err != nil {
-		fmt.Printf("Error adding proforma: %v\n", err)
-		return
+		return fmt.Errorf("\nerror adding proforma:\n %v", err)
 	}
+	return nil
 }
 
 func addProforma(proformaData []byte) error {
@@ -96,25 +104,25 @@ func addProforma(proformaData []byte) error {
 		return err
 	}
 	defer inventory.Close()
-	var stock []TshirtStruct
+	var stock []Proforma
 
 	if err := json.NewDecoder(inventory).Decode(&stock); err != nil {
 		return err
 	}
 
 	// Parse proforma data
-	var proformaItems []TshirtStruct
+	var proformaItems []Proforma
 	if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
 		return fmt.Errorf("failed to parse proforma data: %v", err)
 	}
 
 	// Create sale entries and track stock changes
-	var saleEntries []TshirtStruct
+	var saleEntries []Proforma
 	stockUpdates := make(map[string]map[string][]int) // productUID -> color -> quantities
 
 	for _, proformaItem := range proformaItems {
 		// Create a sale entry from the proforma item
-		saleEntry := TshirtStruct{
+		saleEntry := Proforma{
 			UUID:     uuid.New().String(),
 			Type:     "sale",
 			Invoice:  proformaItem.Invoice,
@@ -234,8 +242,8 @@ func proformaCal(stockUpdates, currentStock map[string]map[string][]int) error {
 	return nil
 }
 
-func consolidation(stock, saleEntries []TshirtStruct, currentStock map[string]map[string][]int) error {
-	var finalStock []TshirtStruct
+func consolidation(stock, saleEntries []Proforma, currentStock map[string]map[string][]int) error {
+	var finalStock []Proforma
 
 	// Keep all existing entries except in_stock entries that were updated
 	for _, item := range stock {

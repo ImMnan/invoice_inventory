@@ -1,0 +1,24 @@
+[
+    {
+        "id": "SK21-001",
+        "name": "RK Tees",
+        "address": "Navsari",
+        "rating":4,
+        "gst_number": "27AABFRK1234C1Z5",
+        "contact": "9876543210",
+        "email": "rktees@example.com",
+        "origin": 2023
+
+    },
+    {
+        "id": "SK21-002",
+        "name": "GJ 21",
+        "address": "Bilimora",
+        "rating":4,
+        "gst_number": "27AA3rFRK1234C1Z5",
+        "contact": "9876543210",
+        "email": "gj21@example.com",
+        "origin": 2024
+
+    }
+]
