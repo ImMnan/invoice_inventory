@@ -22,14 +22,14 @@
           2
         ],
         "red": [
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
         ]
       },
       "total": 24,
@@ -50,14 +50,14 @@
       "gst": "0%",
       "color": {
         "black": [
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
         ],
         "red": [
           2,
@@ -113,46 +113,9 @@
     }
   },
   {
-    "uuid": "1002",
+    "uuid": "1164afff-82bc-430d-9a81-d3ae4e61df88",
     "type": "sale",
-    "invoice": "SK25CPQ10002",
-    "date": "2025-07-12",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "uid": "CO240G-RL",
-      "print": "",
-      "gen": "men/women/unisex",
-      "gst": "0%",
-      "color": {
-        "black": [
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1
-        ],
-        "red": [
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1
-        ]
-      },
-      "total": 16,
-      "price": 0
-    }
-  },
-  {
-    "uuid": "d47554d2-51f3-4f39-bf3c-ca85a4c09e09",
-    "type": "sale",
+    "for": "SK21-001",
     "invoice": "12",
     "date": "8/3/2025",
     "isPaid": false,
@@ -179,64 +142,9 @@
     }
   },
   {
-    "uuid": "580e5876-fb64-4069-a913-413e776c6229",
+    "uuid": "70a7eab7-495f-4f8a-a0c9-f6f09c6da75a",
     "type": "sale",
-    "invoice": "12",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "uid": "CO240G-RL",
-      "print": "Hades",
-      "gen": "Male",
-      "gst": "0",
-      "color": {
-        "black": [
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1
-        ]
-      },
-      "total": 8,
-      "price": 0
-    }
-  },
-  {
-    "uuid": "a2847cd3-017a-4df6-9125-48e826b0dbb9",
-    "type": "sale",
-    "invoice": "12",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "uid": "CO180G-RG",
-      "print": "Goku",
-      "gen": "Male",
-      "gst": "0",
-      "color": {
-        "red": [
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1
-        ]
-      },
-      "total": 8,
-      "price": 0
-    }
-  },
-  {
-    "uuid": "b970c6be-30ef-4452-b723-637c6cd52799",
-    "type": "sale",
+    "for": "SK21-002",
     "invoice": "12",
     "date": "8/3/2025",
     "isPaid": false,

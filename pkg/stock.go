@@ -9,6 +9,7 @@ import (
 type TshirtStruct struct {
 	UUID     string        `json:"uuid"`
 	Type     string        `json:"type"`
+	For      string        `json:"for,omitempty"`
 	Invoice  string        `json:"invoice"`
 	Date     string        `json:"date,omitempty"`
 	IsPaid   bool          `json:"isPaid"`

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
+	"text/tabwriter"
 )
 
 type Invoice struct {
@@ -25,19 +25,39 @@ type ProductData struct {
 }
 
 type CustomerData struct {
-	CustomerId string    `json:"customer_id"`
-	Name       string    `json:"name"`
-	Address    string    `json:"address"`
-	Rating     int       `json:"rating"`
-	GstNumber  string    `json:"gst_number"`
-	Contact    int       `json:"contact"`
-	Email      string    `json:"email"`
-	Origin     time.Time `json:"origin"`
-	Country    string    `json:"country"`
+	CustomerId string `json:"customer_id"`
+	Name       string `json:"name"`
+	Address    string `json:"address"`
+	Rating     int    `json:"rating"`
+	GstNumber  string `json:"gst_number"`
+	Contact    string `json:"contact"`
+	Email      string `json:"email"`
+	Origin     int    `json:"origin"`
 }
 
-func makeInvoice(stockUpdates map[string]map[string][]int) error {
+func makeInvoice(stockUpdates map[string]map[string][]int, format string, customerID string) error {
 	// Create a new invoice based on the stock updates data
+	// format can be "table" or "csv"
+
+	// Load customer data first to validate
+	customersData, err := getCustomerData("Data/customers.json")
+	if err != nil {
+		fmt.Println("Error fetching customer data:", err)
+		return err
+	}
+
+	// Validate customer ID against customers.json
+	var selectedCustomer *CustomerData
+	for _, customer := range customersData {
+		if customer.CustomerId == customerID {
+			selectedCustomer = &customer
+			break
+		}
+	}
+
+	if selectedCustomer == nil {
+		return fmt.Errorf("customer with ID %s not found in customers.json", customerID)
+	}
 
 	// Load products data for name and price lookup
 	productsData, err := getProductData("Data/products.json")
@@ -52,45 +72,105 @@ func makeInvoice(stockUpdates map[string]map[string][]int) error {
 		productMap[product.ProductId] = product
 	}
 
-	// Print header
-	fmt.Println("Product ID, Product Name, Price, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total, Amount")
+	if format == "table" {
+		customerTab := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		// Print customer details first
+		fmt.Fprintln(customerTab, "Name", "Address", "GST Number")
+		fmt.Fprintf(customerTab, "%s\t%s\t%s\n\n",
+			selectedCustomer.Name,
+			selectedCustomer.Address,
+			selectedCustomer.GstNumber)
+		customerTab.Flush()
 
-	// Process each product in stockUpdates
-	for productId, colors := range stockUpdates {
-		// Look up product name and price
-		productInfo, exists := productMap[productId]
-		if !exists {
-			return fmt.Errorf("error: Product ID %s not found in products.json\n", productId)
+		// Use tabwriter for aligned table output
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+
+		// Print product header
+		fmt.Fprintln(w, "Product ID\tProduct Name\tPrice\tColor\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tTotal\tAmount")
+		fmt.Fprintln(w, "----------\t------------\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t----\t----")
+
+		// Process each product in stockUpdates
+		for productId, colors := range stockUpdates {
+			// Look up product name and price
+			productInfo, exists := productMap[productId]
+			if !exists {
+				return fmt.Errorf("error: Product ID %s not found in products.json", productId)
+			}
+
+			// Process each color for this product
+			for color, quantities := range colors {
+				// Calculate total quantity
+				total := 0
+				for _, qty := range quantities {
+					total += qty
+				}
+
+				// Calculate amount (price × total)
+				amount := productInfo.Price * float64(total)
+
+				// Format the line with tabs for tabwriter
+				line := fmt.Sprintf("%s\t%s\t%.0f\t%s",
+					productId,
+					productInfo.Name,
+					productInfo.Price,
+					color)
+
+				// Add size quantities
+				for _, qty := range quantities {
+					line += fmt.Sprintf("\t%d", qty)
+				}
+
+				// Add total and amount
+				line += fmt.Sprintf("\t%d\t%.0f", total, amount)
+
+				fmt.Fprintln(w, line)
+			}
 		}
 
-		// Process each color for this product
-		for color, quantities := range colors {
-			// Calculate total quantity
-			total := 0
-			for _, qty := range quantities {
-				total += qty
+		// Flush the tabwriter to display the formatted table
+		w.Flush()
+
+	}
+	if format == "csv" {
+		// CSV format output
+		fmt.Println("Product ID,Product Name,Price,Color,XS,S,M,L,XL,2XL,3XL,4XL,Total,Amount")
+
+		// Process each product in stockUpdates
+		for productId, colors := range stockUpdates {
+			// Look up product name and price
+			productInfo, exists := productMap[productId]
+			if !exists {
+				return fmt.Errorf("error: Product ID %s not found in products.json", productId)
 			}
 
-			// Calculate amount (price × total)
-			amount := productInfo.Price * float64(total)
+			// Process each color for this product
+			for color, quantities := range colors {
+				// Calculate total quantity
+				total := 0
+				for _, qty := range quantities {
+					total += qty
+				}
 
-			// Format the line as specified: Product ID, Product Name, Price, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total, Amount
-			line := fmt.Sprintf("%s, %s, %.0f, %s",
-				productId,
-				productInfo.Name,
-				productInfo.Price,
-				color)
+				// Calculate amount (price × total)
+				amount := productInfo.Price * float64(total)
 
-			// Add size quantities (XS, S, M, L, XL, 2XL, 3XL, 4XL)
-			for _, qty := range quantities {
-				line += fmt.Sprintf(", %d", qty)
+				// Format the line as CSV
+				line := fmt.Sprintf("%s,%s,%.0f,%s",
+					productId,
+					productInfo.Name,
+					productInfo.Price,
+					color)
+
+				// Add size quantities
+				for _, qty := range quantities {
+					line += fmt.Sprintf(",%d", qty)
+				}
+
+				// Add total and amount
+				line += fmt.Sprintf(",%d,%.0f", total, amount)
+
+				fmt.Println(line)
 			}
-
-			// Add total and amount
-			line += fmt.Sprintf(", %d, %.0f", total, amount)
-
-			// Print for now (later we'll write to file)
-			fmt.Println(line)
 		}
 	}
 
@@ -129,4 +209,19 @@ func getProductData(fileName string) ([]ProductData, error) {
 		return nil, err
 	}
 	return product, nil
+}
+
+func getCustomerData(fileName string) ([]CustomerData, error) {
+	filedata, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer filedata.Close()
+
+	var customers []CustomerData
+	err = json.NewDecoder(filedata).Decode(&customers)
+	if err != nil {
+		return nil, err
+	}
+	return customers, nil
 }

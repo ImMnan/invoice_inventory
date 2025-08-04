@@ -35,6 +35,7 @@ func GetProforma(fileName string) ([]byte, error) {
 	}
 
 	var proformaData []Proforma
+
 	for i, row := range poData {
 		if i == 0 { // Skip header row
 			continue
@@ -92,32 +93,73 @@ func ApplyProforma(fileName string) error {
 	if err != nil {
 		return fmt.Errorf("\nerror processing proforma:\n %v", err)
 	}
-	stockUpdates, err := addProforma(proformaData)
-	if err != nil {
-		return fmt.Errorf("\nerror adding proforma:\n %v", err)
+
+	// Parse proforma data to extract customer IDs and group by customer
+	var proformaItems []Proforma
+	if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
+		return fmt.Errorf("failed to parse proforma data: %v", err)
 	}
-	if err := makeInvoice(stockUpdates); err != nil {
-		return fmt.Errorf("\nerror creating invoice:\n %v", err)
+
+	// Group proforma items by customer ID
+	customerGroups := make(map[string][]Proforma)
+	for _, item := range proformaItems {
+		customerID := item.For
+		if customerID != "" {
+			customerGroups[customerID] = append(customerGroups[customerID], item)
+		}
 	}
+
+	// Process each customer group separately
+	for customerID, customerItems := range customerGroups {
+		//fmt.Printf("\n=== Processing invoice for customer: %s ===\n", customerID)
+
+		// Create customer-specific proforma data
+		customerProformaData, err := json.Marshal(customerItems)
+		if err != nil {
+			return fmt.Errorf("error marshaling customer proforma data: %v", err)
+		}
+
+		// Process this customer's items
+		stockUpdates, _, err := addProforma(customerProformaData)
+		if err != nil {
+			return fmt.Errorf("\nerror adding proforma for customer %s:\n %v", customerID, err)
+		}
+
+		// Generate invoice for this customer
+		if err := makeInvoice(stockUpdates, "table", customerID); err != nil {
+			return fmt.Errorf("\nerror creating invoice for customer %s:\n %v", customerID, err)
+		}
+	}
+
+	if len(customerGroups) == 0 {
+		return fmt.Errorf("no customer IDs found in proforma data")
+	}
+
 	return nil
 }
 
-func addProforma(proformaData []byte) (map[string]map[string][]int, error) {
+func addProforma(proformaData []byte) (map[string]map[string][]int, string, error) {
 	inventory, err := os.Open("Data/inventory.json")
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer inventory.Close()
 	var stock []Proforma
 
 	if err := json.NewDecoder(inventory).Decode(&stock); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Parse proforma data
 	var proformaItems []Proforma
 	if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
-		return nil, fmt.Errorf("failed to parse proforma data: %v", err)
+		return nil, "", fmt.Errorf("failed to parse proforma data: %v", err)
+	}
+
+	// Extract customer ID from the first proforma item
+	var customerID string
+	if len(proformaItems) > 0 {
+		customerID = proformaItems[0].For
 	}
 
 	// Create sale entries and track stock changes
@@ -129,6 +171,7 @@ func addProforma(proformaData []byte) (map[string]map[string][]int, error) {
 		saleEntry := Proforma{
 			UUID:     uuid.New().String(),
 			Type:     "sale",
+			For:      proformaItem.For, // Copy customer ID
 			Invoice:  proformaItem.Invoice,
 			Date:     proformaItem.Date,
 			IsPaid:   false,
@@ -191,14 +234,14 @@ func addProforma(proformaData []byte) (map[string]map[string][]int, error) {
 
 	// Apply subtractions to the inventory
 	if err := proformaCal(stockUpdates, currentStock); err != nil {
-		return nil, fmt.Errorf("error during proforma calculation: %v", err)
+		return nil, "", fmt.Errorf("error during proforma calculation: %v", err)
 	}
 
 	// Remove all existing in_stock entries and keep other entries
 	if err := consolidation(stock, saleEntries, currentStock); err != nil {
-		return nil, fmt.Errorf("error during consolidation: %v", err)
+		return nil, "", fmt.Errorf("error during consolidation: %v", err)
 	}
-	return stockUpdates, nil
+	return stockUpdates, customerID, nil
 }
 
 func proformaCal(stockUpdates, currentStock map[string]map[string][]int) error {

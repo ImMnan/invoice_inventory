@@ -46,6 +46,7 @@ func applyProforma(fileName string, confirm bool) {
 
 		for _, item := range proformaItems {
 			fmt.Printf("  Invoice: %s\n", item.Invoice)
+			fmt.Printf("  Customer ID: %s\n", item.For)
 			fmt.Printf("  Type: %s\n", item.Type)
 			fmt.Printf("  For: %s\n", item.For)
 			fmt.Printf("  Date: %s\n", item.Date)
