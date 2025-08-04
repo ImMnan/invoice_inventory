@@ -1,4 +1,4 @@
-[  
+[
   {
     "uuid": "1003",
     "type": "in_stock",
@@ -22,17 +22,18 @@
           2
         ],
         "red": [
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
         ]
       },
-      "total": 24
+      "total": 24,
+      "price": 0
     }
   },
   {
@@ -49,14 +50,14 @@
       "gst": "0%",
       "color": {
         "black": [
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
         ],
         "red": [
           2,
@@ -69,7 +70,8 @@
           2
         ]
       },
-      "total": 32
+      "total": 24,
+      "price": 0
     }
   },
   {
@@ -106,7 +108,8 @@
           2
         ]
       },
-      "total": 32
+      "total": 32,
+      "price": 0
     }
   },
   {
@@ -143,7 +146,8 @@
           1
         ]
       },
-      "total": 16
+      "total": 16,
+      "price": 0
     }
   },
   {
@@ -170,7 +174,8 @@
           1
         ]
       },
-      "total": 8
+      "total": 8,
+      "price": 0
     }
   },
   {
@@ -197,7 +202,64 @@
           1
         ]
       },
-      "total": 8
+      "total": 8,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "a2847cd3-017a-4df6-9125-48e826b0dbb9",
+    "type": "sale",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO180G-RG",
+      "print": "Goku",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "red": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "total": 8,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "b970c6be-30ef-4452-b723-637c6cd52799",
+    "type": "sale",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO240G-RL",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "black": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "total": 8,
+      "price": 0
     }
   }
 ]

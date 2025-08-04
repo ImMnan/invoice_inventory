@@ -92,28 +92,32 @@ func ApplyProforma(fileName string) error {
 	if err != nil {
 		return fmt.Errorf("\nerror processing proforma:\n %v", err)
 	}
-	if err := addProforma(proformaData); err != nil {
+	stockUpdates, err := addProforma(proformaData)
+	if err != nil {
 		return fmt.Errorf("\nerror adding proforma:\n %v", err)
+	}
+	if err := makeInvoice(stockUpdates); err != nil {
+		return fmt.Errorf("\nerror creating invoice:\n %v", err)
 	}
 	return nil
 }
 
-func addProforma(proformaData []byte) error {
+func addProforma(proformaData []byte) (map[string]map[string][]int, error) {
 	inventory, err := os.Open("Data/inventory.json")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer inventory.Close()
 	var stock []Proforma
 
 	if err := json.NewDecoder(inventory).Decode(&stock); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Parse proforma data
 	var proformaItems []Proforma
 	if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
-		return fmt.Errorf("failed to parse proforma data: %v", err)
+		return nil, fmt.Errorf("failed to parse proforma data: %v", err)
 	}
 
 	// Create sale entries and track stock changes
@@ -187,14 +191,14 @@ func addProforma(proformaData []byte) error {
 
 	// Apply subtractions to the inventory
 	if err := proformaCal(stockUpdates, currentStock); err != nil {
-		return fmt.Errorf("error during proforma calculation: %v", err)
+		return nil, fmt.Errorf("error during proforma calculation: %v", err)
 	}
 
 	// Remove all existing in_stock entries and keep other entries
 	if err := consolidation(stock, saleEntries, currentStock); err != nil {
-		return fmt.Errorf("error during consolidation: %v", err)
+		return nil, fmt.Errorf("error during consolidation: %v", err)
 	}
-	return nil
+	return stockUpdates, nil
 }
 
 func proformaCal(stockUpdates, currentStock map[string]map[string][]int) error {

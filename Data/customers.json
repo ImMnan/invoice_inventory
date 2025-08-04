@@ -1,6 +1,6 @@
 [
     {
-        "id": "SK21-001",
+        "customer_id": "SK21-001",
         "name": "RK Tees",
         "address": "Navsari",
         "rating":4,
@@ -11,7 +11,7 @@
 
     },
     {
-        "id": "SK21-002",
+        "customer_id": "SK21-002",
         "name": "GJ 21",
         "address": "Bilimora",
         "rating":4,
