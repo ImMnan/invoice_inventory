@@ -16,12 +16,15 @@ var ApplyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		file, err := cmd.Flags().GetString("file")
 		approve, _ := cmd.Flags().GetBool("approve")
+		csv := false
+		csv, _ = cmd.Flags().GetBool("csv")
+
 		if err != nil {
 			// Handle error
 			return
 		}
 		if file != "" {
-			applyProforma(file, approve)
+			applyProforma(file, approve, csv)
 		} else {
 			cmd.Help()
 		}
@@ -31,11 +34,17 @@ var ApplyCmd = &cobra.Command{
 func init() {
 	ApplyCmd.Flags().StringP("file", "f", "", "File to apply changes from")
 	ApplyCmd.Flags().Bool("approve", false, "[!] Approve the changes")
+	ApplyCmd.Flags().BoolP("csv", "c", false, "Output in CSV format")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 
-func applyProforma(fileName string, confirm bool) {
+func applyProforma(fileName string, confirm, csv bool) {
+	format := "table"
+	if csv {
+		format = "csv"
+	}
+
 	if !confirm {
 		proformaData, err := pkg.GetProforma(fileName)
 		if err != nil {
@@ -63,7 +72,7 @@ func applyProforma(fileName string, confirm bool) {
 	}
 	if confirm {
 		//	fmt.Println("Changes approved. Applying proforma to the database...")
-		if err := pkg.ApplyProforma(fileName); err != nil {
+		if err := pkg.ApplyProforma(fileName, format); err != nil {
 			panic(fmt.Sprintf("Error applying proforma: %v", err))
 		}
 	}

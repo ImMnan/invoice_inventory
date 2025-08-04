@@ -11,17 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Proforma struct {
-	UUID     string        `json:"uuid"`
-	Type     string        `json:"type"`
-	For      string        `json:"for,omitempty"`
-	Invoice  string        `json:"invoice"`
-	Date     string        `json:"date,omitempty"`
-	IsPaid   bool          `json:"isPaid"`
-	Rejected bool          `json:"rejected"`
-	Product  ProductStruct `json:"product"`
-}
-
 func GetProforma(fileName string) ([]byte, error) {
 
 	poFile, err := os.Open(fileName)
@@ -35,8 +24,10 @@ func GetProforma(fileName string) ([]byte, error) {
 	}
 
 	var proformaData []Proforma
-
 	for i, row := range poData {
+		if row[0] != "proforma" { // Ensure we only process proforma rows
+			return nil, fmt.Errorf("invalid proforma data: expected 'proforma' type in first column")
+		}
 		if i == 0 { // Skip header row
 			continue
 		}
@@ -95,7 +86,7 @@ func GetProforma(fileName string) ([]byte, error) {
 	return json.Marshal(proformaData)
 }
 
-func ApplyProforma(fileName string) error {
+func ApplyProforma(fileName, format string) error {
 	proformaData, err := GetProforma(fileName)
 	if err != nil {
 		return fmt.Errorf("\nerror processing proforma:\n %v", err)
@@ -134,20 +125,17 @@ func ApplyProforma(fileName string) error {
 	}
 
 	// Generate all invoices at once
-	if err := makeInvoice(proformaData, "table", invoiceGroups); err != nil {
+	if err := makeInvoice(proformaData, format, invoiceGroups); err != nil {
 		return fmt.Errorf("\nerror creating invoices:\n %v", err)
 	}
 
 	if len(invoiceGroups) == 0 {
 		return fmt.Errorf("no invoice IDs found in proforma data")
 	}
-
 	//	fmt.Printf("\nProcessed and generated %d invoices\n", len(invoiceGroups))
 	return nil
 
 }
-
-//	fmt.Printf("\nProcessed %d customers and generated %d invoices\n", len(customerGroups), len(invoiceGroups))
 
 func addProforma(proformaItems []Proforma) error {
 	inventory, err := os.Open("Data/inventory.json")

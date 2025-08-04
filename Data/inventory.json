@@ -32,7 +32,7 @@
           2
         ]
       },
-      "total": 16,
+      "total": 24,
       "price": 0
     }
   },
@@ -446,6 +446,93 @@
       "gst": "0",
       "color": {
         "black": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "total": 8,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "fbc06e8a-5e97-4066-84e0-b398beb715ab",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO180G-RG",
+      "print": "Goku",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "red": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "total": 8,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "9e61820b-7098-4d15-b18c-ff8666a058c5",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO240G-RL",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "black": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "total": 8,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "9dcb5dc6-e0d6-44da-ae81-fa009a332274",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO240G-RL",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "red": [
           1,
           1,
           1,
