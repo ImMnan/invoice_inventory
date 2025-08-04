@@ -100,67 +100,65 @@ func ApplyProforma(fileName string) error {
 		return fmt.Errorf("failed to parse proforma data: %v", err)
 	}
 
-	// Group proforma items by customer ID
-	customerGroups := make(map[string][]Proforma)
+	// Group proforma items by invoice ID
+	invoiceGroups := make(map[string][]Proforma)
 	for _, item := range proformaItems {
-		customerID := item.For
-		if customerID != "" {
-			customerGroups[customerID] = append(customerGroups[customerID], item)
+		invoiceID := item.Invoice
+		invoiceGroups[invoiceID] = append(invoiceGroups[invoiceID], item)
+	}
+
+	// Process inventory updates and generate invoices for each invoice group
+	for invoiceID, invoiceItems := range invoiceGroups {
+		// Extract customer ID from the first item in this invoice
+		var customerID string
+		if len(invoiceItems) > 0 {
+			customerID = invoiceItems[0].For
+		}
+
+		if customerID == "" {
+			fmt.Printf("Warning: No customer ID found for invoice %s, skipping...\n", invoiceID)
+			continue
+		}
+
+		// Process inventory updates for this invoice
+		if err := addProforma(invoiceItems); err != nil {
+			return fmt.Errorf("\nerror adding proforma for invoice %s:\n %v", invoiceID, err)
 		}
 	}
 
-	// Process each customer group separately
-	for customerID, customerItems := range customerGroups {
-		//fmt.Printf("\n=== Processing invoice for customer: %s ===\n", customerID)
-
-		// Create customer-specific proforma data
-		customerProformaData, err := json.Marshal(customerItems)
-		if err != nil {
-			return fmt.Errorf("error marshaling customer proforma data: %v", err)
-		}
-
-		// Process this customer's items
-		stockUpdates, _, err := addProforma(customerProformaData)
-		if err != nil {
-			return fmt.Errorf("\nerror adding proforma for customer %s:\n %v", customerID, err)
-		}
-
-		// Generate invoice for this customer
-		if err := makeInvoice(stockUpdates, "table", customerID); err != nil {
-			return fmt.Errorf("\nerror creating invoice for customer %s:\n %v", customerID, err)
-		}
+	// Generate all invoices at once
+	if err := makeInvoice(proformaData, "table", invoiceGroups); err != nil {
+		return fmt.Errorf("\nerror creating invoices:\n %v", err)
 	}
 
-	if len(customerGroups) == 0 {
-		return fmt.Errorf("no customer IDs found in proforma data")
+	if len(invoiceGroups) == 0 {
+		return fmt.Errorf("no invoice IDs found in proforma data")
 	}
 
+	fmt.Printf("\nProcessed and generated %d invoices\n", len(invoiceGroups))
 	return nil
+
 }
 
-func addProforma(proformaData []byte) (map[string]map[string][]int, string, error) {
+//	fmt.Printf("\nProcessed %d customers and generated %d invoices\n", len(customerGroups), len(invoiceGroups))
+
+func addProforma(proformaItems []Proforma) error {
 	inventory, err := os.Open("Data/inventory.json")
 	if err != nil {
-		return nil, "", err
+		return err
 	}
 	defer inventory.Close()
 	var stock []Proforma
 
 	if err := json.NewDecoder(inventory).Decode(&stock); err != nil {
-		return nil, "", err
-	}
-
-	// Parse proforma data
-	var proformaItems []Proforma
-	if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
-		return nil, "", fmt.Errorf("failed to parse proforma data: %v", err)
+		return err
 	}
 
 	// Extract customer ID from the first proforma item
-	var customerID string
-	if len(proformaItems) > 0 {
-		customerID = proformaItems[0].For
-	}
+	//var customerID string
+	//if len(proformaItems) > 0 {
+	//	customerID = proformaItems[0].For
+	//}
 
 	// Create sale entries and track stock changes
 	var saleEntries []Proforma
@@ -234,14 +232,14 @@ func addProforma(proformaData []byte) (map[string]map[string][]int, string, erro
 
 	// Apply subtractions to the inventory
 	if err := proformaCal(stockUpdates, currentStock); err != nil {
-		return nil, "", fmt.Errorf("error during proforma calculation: %v", err)
+		return fmt.Errorf("error during proforma calculation: %v", err)
 	}
 
 	// Remove all existing in_stock entries and keep other entries
 	if err := consolidation(stock, saleEntries, currentStock); err != nil {
-		return nil, "", fmt.Errorf("error during consolidation: %v", err)
+		return fmt.Errorf("error during consolidation: %v", err)
 	}
-	return stockUpdates, customerID, nil
+	return nil
 }
 
 func proformaCal(stockUpdates, currentStock map[string]map[string][]int) error {

@@ -1,7 +1,7 @@
 [
     {
         "product_id": "CO180G-RG",
-        "name": "100% Cotton | T-Shirt | Bio-Washed",
+        "name": "100% Cotton T-Shirt Bio-Washed",
         "colors": {
             "black": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"],
             "red": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"]
@@ -11,7 +11,7 @@
     },
     {
         "product_id": "CO240G-RL",
-        "name": "100% Cotton | T-Shirt | Bio-Washed",
+        "name": "100% Cotton T-Shirt Bio-Washed",
         "colors": {
             "black": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"],
             "red": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"]
