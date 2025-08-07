@@ -44,13 +44,28 @@ func applyProforma(fileName string, confirm, csv bool) {
 	if csv {
 		format = "csv"
 	}
+	type p interface {
+	}
+
+	//dataFile, err := os.Open("Data/Proforma.csv")
+	tshirt := &pkg.FileData{Data: fileName}
+	demo, _ := tshirt.ProcessProductData()
+
+	//pointerTshirt := &pkg.FileData{OsData: dataFile}
+	//demo, _ := pointerTshirt.ProcessProductData()
+
+	fmt.Println(demo)
+	//data, _ := pkg.ProcessApply(fileName)
+	//tshirt := []pkg.TshirtStruct{}
+	//proformaData, err := tshirt.ProcessFileData(data)
 
 	if !confirm {
-		proformaData, err := pkg.GetProforma(fileName)
+
 		if err != nil {
 			panic(fmt.Sprintf("error generating proforma data: %v", err))
 		}
-		var proformaItems []pkg.Proforma
+
+		var proformaItems []pkg.TshirtStruct
 		json.Unmarshal(proformaData, &proformaItems)
 
 		for _, item := range proformaItems {

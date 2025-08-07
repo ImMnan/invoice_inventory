@@ -74,7 +74,7 @@ func (p ProBool) ProcessFileData(data [][]string) ([]byte, error) {
 				},
 			})
 		}
-		return json.Marshal(proformaData)
+		return proformaData
 
 	}
 	return nil, nil
