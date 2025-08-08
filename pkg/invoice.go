@@ -38,7 +38,7 @@ type CustomerData struct {
 	Origin     int    `json:"origin"`
 }
 
-func makeInvoice(proformaData []byte, format string, invoiceGroups map[string][]Proforma) error {
+func (product *ProductSlice) makeInvoice(format string, invoiceGroups map[string][]Proforma) error {
 
 	// Generate invoices grouped by invoice ID
 	for invoiceID, invoiceItems := range invoiceGroups {
@@ -80,14 +80,14 @@ func makeInvoice(proformaData []byte, format string, invoiceGroups map[string][]
 			}
 		}
 
-		var proformaItems []Proforma
-		if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
-			return fmt.Errorf("failed to parse proforma data: %v", err)
-		}
+		//var proformaItems []Proforma
+		//if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
+		//	return fmt.Errorf("failed to parse proforma data: %v", err)
+		//}
 		// Create a map to lookup print and price data from proforma items
 		printMap := make(map[string]string)
 		priceMap := make(map[string]float64)
-		for _, item := range proformaItems {
+		for _, item := range *product {
 			printMap[item.Product.UID] = item.Product.Print
 			priceMap[item.Product.UID] = float64(item.Product.Price)
 		}

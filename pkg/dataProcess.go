@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -9,24 +10,6 @@ import (
 
 	"github.com/google/uuid"
 )
-
-type ProductSlice []TshirtStruct
-
-//type ProformaSlice []TshirtStruct
-//type PurchaseSlice []TshirtStruct
-
-type FileData struct {
-	Data string
-	// OsData *os.File
-}
-
-type ManualData struct {
-	Data [][]string
-}
-
-type processFile interface {
-	ProcessProductData() (ProductSlice, error)
-}
 
 //func TestInterface(pf processFile) []TshirtStruct {
 //	demo, _ := pf.processProductData()
@@ -45,130 +28,263 @@ func (file FileData) ProcessProductData() (ProductSlice, error) {
 		return nil, fmt.Errorf("failed to read csv data: %w", err)
 	}
 	poData := dataValue
-	var proformaData []TshirtStruct
+	var productData []TshirtStruct
+
 	for i, row := range poData {
-		if row[0] != "proforma" { // Ensure we only process proforma rows
-			return nil, fmt.Errorf("invalid proforma data: expected 'proforma' type in first column")
-		}
-		if i == 0 { // Skip header row
-			continue
-		}
-		if len(row) < 18 { // Ensure we have all required columns
-			continue
-		}
+		if row[0] == "proforma" && row[0] != "purchase-invoice" { // Ensure we only process proforma rows
 
-		// Parse size quantities
-		colorMap := make(map[string][]int)
-		quantities := make([]int, 8)
-
-		// Parse quantities for each size (columns 8-15)
-		for j := 0; j < 8; j++ {
-			if qty, err := strconv.Atoi(strings.TrimSpace(row[10+j])); err == nil {
-				quantities[j] = qty
+			if i == 0 { // Skip header row
+				continue
 			}
-		}
-
-		// Color is in column 9, use it as key for the map
-		color := strings.TrimSpace(row[9])
-		colorMap[color] = quantities
-
-		// Parse total (column 16)
-		total := 0
-		if totalStr := strings.TrimSpace(row[18]); totalStr != "" {
-			if t, err := strconv.Atoi(totalStr); err == nil {
-				total = t
+			if len(row) < 18 { // Ensure we have all required columns
+				continue
 			}
+
+			// Parse size quantities
+			colorMap := make(map[string][]int)
+			quantities := make([]int, 8)
+
+			// Parse quantities for each size (columns 8-15)
+			for j := 0; j < 8; j++ {
+				if qty, err := strconv.Atoi(strings.TrimSpace(row[10+j])); err == nil {
+					quantities[j] = qty
+				}
+			}
+
+			// Color is in column 9, use it as key for the map
+			color := strings.TrimSpace(row[9])
+			colorMap[color] = quantities
+
+			// Parse total (column 16)
+			total := 0
+			if totalStr := strings.TrimSpace(row[18]); totalStr != "" {
+				if t, err := strconv.Atoi(totalStr); err == nil {
+					total = t
+				}
+			}
+
+			productData = append(productData, TshirtStruct{
+				UUID:     uuid.New().String(),
+				Type:     strings.TrimSpace(row[0]),
+				Invoice:  strings.TrimSpace(row[1]),
+				For:      strings.TrimSpace(row[2]), // For field
+				Date:     strings.TrimSpace(row[4]),
+				IsPaid:   false, // Default to false for proforma
+				Rejected: false, // Default to false for proforma
+				Product: ProductStruct{
+					UID:   strings.TrimSpace(row[3]), // Product_Id
+					Print: strings.TrimSpace(row[7]), // Print
+					Gen:   strings.TrimSpace(row[8]), // Gen
+					Price: func() int {
+						priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
+						if err != nil {
+							return 0
+						}
+						return priceInt
+					}(),
+					GST:   strings.TrimSpace(row[6]), // GST as string
+					Color: colorMap,
+					Total: total,
+				},
+			})
 		}
 
-		proformaData = append(proformaData, TshirtStruct{
-			UUID:     uuid.New().String(),
-			Type:     strings.TrimSpace(row[0]),
-			Invoice:  strings.TrimSpace(row[1]),
-			For:      strings.TrimSpace(row[2]), // For field
-			Date:     strings.TrimSpace(row[4]),
-			IsPaid:   false, // Default to false for proforma
-			Rejected: false, // Default to false for proforma
-			Product: ProductStruct{
-				UID:   strings.TrimSpace(row[3]), // Product_Id
-				Print: strings.TrimSpace(row[7]), // Print
-				Gen:   strings.TrimSpace(row[8]), // Gen
-				Price: func() int {
-					priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
-					if err != nil {
-						return 0
-					}
-					return priceInt
-				}(),
-				GST:   strings.TrimSpace(row[6]), // GST as string
-				Color: colorMap,
-				Total: total,
-			},
-		})
+		if row[0] == "purchase-invoice" && row[0] != "proforma" {
+			if i == 0 { // Skip header row
+				continue
+			}
+			if len(row) < 15 { // Ensure we have all required columns
+				continue
+			}
+			// Parse size quantities
+			colorMap := make(map[string][]int)
+			quantities := make([]int, 8)
+			// Parse quantities for each size (columns 8-15)
+			for j := 0; j < 8; j++ {
+				if qty, err := strconv.Atoi(strings.TrimSpace(row[6+j])); err == nil {
+					quantities[j] = qty
+				}
+			}
+			// Color is in column 6, use it as key for the map
+			color := strings.TrimSpace(row[5])
+			colorMap[color] = quantities
+			// Parse total (column 16)
+			total := 0
+			if totalStr := strings.TrimSpace(row[14]); totalStr != "" {
+				if t, err := strconv.Atoi(totalStr); err == nil {
+					total = t
+				}
+			}
+
+			productData = append(productData, TshirtStruct{
+				UUID:    uuid.New().String(),
+				Type:    "purchase",
+				Invoice: row[1],
+				Date:    strings.TrimSpace(row[3]), // Date
+				From:    strings.TrimSpace(row[2]), // Vendor ID
+				Product: ProductStruct{
+					UID:   strings.TrimSpace(row[2]), // Product_Id
+					Gen:   strings.TrimSpace(row[5]), // Gen
+					Color: colorMap,
+					Total: total,
+				},
+			})
+		}
+
 	}
-	return proformaData, nil
+	return productData, nil
+
 }
 
 func (manual ManualData) ProcessProductData() (ProductSlice, error) {
 	poData := manual.Data
-	var proformaData []TshirtStruct
+	var productData []TshirtStruct
+
 	for i, row := range poData {
-		if row[0] != "proforma" { // Ensure we only process proforma rows
-			return nil, fmt.Errorf("invalid proforma data: expected 'proforma' type in first column")
-		}
-		if i == 0 { // Skip header row
-			continue
-		}
-		if len(row) < 18 { // Ensure we have all required columns
-			continue
-		}
+		if row[0] == "proforma" && row[0] != "purchase-invoice" { // Ensure we only process proforma rows
 
-		// Parse size quantities
-		colorMap := make(map[string][]int)
-		quantities := make([]int, 8)
-
-		// Parse quantities for each size (columns 8-15)
-		for j := 0; j < 8; j++ {
-			if qty, err := strconv.Atoi(strings.TrimSpace(row[10+j])); err == nil {
-				quantities[j] = qty
+			if i == 0 { // Skip header row
+				continue
 			}
-		}
-
-		// Color is in column 9, use it as key for the map
-		color := strings.TrimSpace(row[9])
-		colorMap[color] = quantities
-
-		// Parse total (column 16)
-		total := 0
-		if totalStr := strings.TrimSpace(row[18]); totalStr != "" {
-			if t, err := strconv.Atoi(totalStr); err == nil {
-				total = t
+			if len(row) < 18 { // Ensure we have all required columns
+				continue
 			}
+
+			// Parse size quantities
+			colorMap := make(map[string][]int)
+			quantities := make([]int, 8)
+
+			// Parse quantities for each size (columns 8-15)
+			for j := 0; j < 8; j++ {
+				if qty, err := strconv.Atoi(strings.TrimSpace(row[10+j])); err == nil {
+					quantities[j] = qty
+				}
+			}
+
+			// Color is in column 9, use it as key for the map
+			color := strings.TrimSpace(row[9])
+			colorMap[color] = quantities
+
+			// Parse total (column 16)
+			total := 0
+			if totalStr := strings.TrimSpace(row[18]); totalStr != "" {
+				if t, err := strconv.Atoi(totalStr); err == nil {
+					total = t
+				}
+			}
+
+			productData = append(productData, TshirtStruct{
+				UUID:     uuid.New().String(),
+				Type:     strings.TrimSpace(row[0]),
+				Invoice:  strings.TrimSpace(row[1]),
+				For:      strings.TrimSpace(row[2]), // For field
+				Date:     strings.TrimSpace(row[4]),
+				IsPaid:   false, // Default to false for proforma
+				Rejected: false, // Default to false for proforma
+				Product: ProductStruct{
+					UID:   strings.TrimSpace(row[3]), // Product_Id
+					Print: strings.TrimSpace(row[7]), // Print
+					Gen:   strings.TrimSpace(row[8]), // Gen
+					Price: func() int {
+						priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
+						if err != nil {
+							return 0
+						}
+						return priceInt
+					}(),
+					GST:   strings.TrimSpace(row[6]), // GST as string
+					Color: colorMap,
+					Total: total,
+				},
+			})
 		}
 
-		proformaData = append(proformaData, TshirtStruct{
-			UUID:     uuid.New().String(),
-			Type:     strings.TrimSpace(row[0]),
-			Invoice:  strings.TrimSpace(row[1]),
-			For:      strings.TrimSpace(row[2]), // For field
-			Date:     strings.TrimSpace(row[4]),
-			IsPaid:   false, // Default to false for proforma
-			Rejected: false, // Default to false for proforma
-			Product: ProductStruct{
-				UID:   strings.TrimSpace(row[3]), // Product_Id
-				Print: strings.TrimSpace(row[7]), // Print
-				Gen:   strings.TrimSpace(row[8]), // Gen
-				Price: func() int {
-					priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
-					if err != nil {
-						return 0
-					}
-					return priceInt
-				}(),
-				GST:   strings.TrimSpace(row[6]), // GST as string
-				Color: colorMap,
-				Total: total,
-			},
-		})
+		if row[0] == "purchase-invoice" && row[0] != "proforma" {
+			if i == 0 { // Skip header row
+				continue
+			}
+			if len(row) < 15 { // Ensure we have all required columns
+				continue
+			}
+			// Parse size quantities
+			colorMap := make(map[string][]int)
+			quantities := make([]int, 8)
+			// Parse quantities for each size (columns 8-15)
+			for j := 0; j < 8; j++ {
+				if qty, err := strconv.Atoi(strings.TrimSpace(row[6+j])); err == nil {
+					quantities[j] = qty
+				}
+			}
+			// Color is in column 6, use it as key for the map
+			color := strings.TrimSpace(row[5])
+			colorMap[color] = quantities
+			// Parse total (column 16)
+			total := 0
+			if totalStr := strings.TrimSpace(row[14]); totalStr != "" {
+				if t, err := strconv.Atoi(totalStr); err == nil {
+					total = t
+				}
+			}
+
+			productData = append(productData, TshirtStruct{
+				UUID:    uuid.New().String(),
+				Type:    "purchase",
+				Invoice: row[1],
+				Date:    strings.TrimSpace(row[3]), // Date
+				From:    strings.TrimSpace(row[2]), // Vendor ID
+				Product: ProductStruct{
+					UID:   strings.TrimSpace(row[2]), // Product_Id
+					Gen:   strings.TrimSpace(row[5]), // Gen
+					Color: colorMap,
+					Total: total,
+				},
+			})
+		}
+
 	}
-	return proformaData, nil
+	return productData, nil
+}
+
+func (data *JsLocalDB) existingStock() (map[string]map[string][]int, error) {
+	inventory, err := os.Open(data.file)
+	if err != nil {
+		return nil, err
+	}
+	defer inventory.Close()
+	var stock []In_stockTshirtStruct
+	if err := json.NewDecoder(inventory).Decode(&stock); err != nil {
+		return nil, err
+	}
+	// Collect current stock state and apply subtractions
+	currentStock := make(map[string]map[string][]int) // productUID -> color -> quantities
+
+	// First, collect all existing in_stock data
+	for _, item := range stock {
+		if item.Type == "in_stock" {
+			if currentStock[item.Product.UID] == nil {
+				currentStock[item.Product.UID] = make(map[string][]int)
+			}
+			for color, quantities := range item.Product.Color {
+				currentStock[item.Product.UID][color] = make([]int, len(quantities))
+				copy(currentStock[item.Product.UID][color], quantities)
+			}
+		}
+	}
+	return currentStock, nil
+}
+
+func UpdateData(applyData ApplyData) (StockUpdate, error) {
+	// Process inventory updates and generate invoices for each invoice group
+	proformaStkUpdates, saleEntries, _ := applyData.addProforma()
+	purchaseStkUpdates, purchaseEntries, _ := applyData.addPurchase()
+
+	// Create a StockUpdate instance to hold both updates and entries
+	stockUpdate := StockUpdate{
+		proformaStkUpdates: proformaStkUpdates,
+		purchaseStkUpdates: purchaseStkUpdates,
+		saleEntries:        saleEntries,
+		purchaseEntries:    purchaseEntries,
+	}
+	return stockUpdate, nil
+	// Generate all invoices at
 }
