@@ -16,7 +16,7 @@ import (
 //	return demo
 //}
 
-func (file FileData) ProcessProductData() (ProductSlice, error) {
+func (file FileData) GetStockUpdate() (ProductSlice, error) {
 	dataFile, err := os.Open(file.Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open data file: %w", err)
@@ -136,7 +136,7 @@ func (file FileData) ProcessProductData() (ProductSlice, error) {
 
 }
 
-func (manual ManualData) ProcessProductData() (ProductSlice, error) {
+func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 	poData := manual.Data
 	var productData []TshirtStruct
 
@@ -245,7 +245,7 @@ func (manual ManualData) ProcessProductData() (ProductSlice, error) {
 	return productData, nil
 }
 
-func (data *JsLocalDB) existingStock() (map[string]map[string][]int, error) {
+func (data *JsLocalDB) getExistingStock() (map[string]map[string][]int, error) {
 	inventory, err := os.Open(data.file)
 	if err != nil {
 		return nil, err
@@ -271,20 +271,4 @@ func (data *JsLocalDB) existingStock() (map[string]map[string][]int, error) {
 		}
 	}
 	return currentStock, nil
-}
-
-func UpdateData(applyData ApplyData) (StockUpdate, error) {
-	// Process inventory updates and generate invoices for each invoice group
-	proformaStkUpdates, saleEntries, _ := applyData.addProforma()
-	purchaseStkUpdates, purchaseEntries, _ := applyData.addPurchase()
-
-	// Create a StockUpdate instance to hold both updates and entries
-	stockUpdate := StockUpdate{
-		proformaStkUpdates: proformaStkUpdates,
-		purchaseStkUpdates: purchaseStkUpdates,
-		saleEntries:        saleEntries,
-		purchaseEntries:    purchaseEntries,
-	}
-	return stockUpdate, nil
-	// Generate all invoices at
 }

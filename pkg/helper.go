@@ -54,13 +54,9 @@ type ManualData struct {
 type JsLocalDB struct {
 	file string
 }
-
-//type processData interface {
-//	ProcessProductData() (ProductSlice, error)
-//}
-
-type DB interface {
+type StockData interface {
 	existingStock() (map[string]map[string][]int, error)
+	ProcessInventoryUpdate() (map[string]map[string][]int, ProductSlice, error)
 }
 
 type ApplyData interface {
@@ -72,4 +68,31 @@ type StockUpdate struct {
 	purchaseStkUpdates map[string]map[string][]int
 	saleEntries        []Proforma
 	purchaseEntries    []Purchase
+}
+
+// InvoiceGroupedData represents the data grouped by invoice ID for invoice generation
+type InvoiceGroupedData struct {
+	SalesByInvoice        map[string][]Proforma                  // invoiceID -> sale entries (for invoice generation)
+	StockChangesByInvoice map[string]map[string]map[string][]int // invoiceID -> productUID -> color -> quantities (for optimization)
+}
+
+func UpdateData(applyData ApplyData) (StockUpdate, error) {
+	// Process inventory updates and generate invoices for each invoice group
+	proformaStkUpdates, saleEntries, err := applyData.addProforma()
+	if err != nil {
+		return StockUpdate{}, err
+	}
+	purchaseStkUpdates, purchaseEntries, err := applyData.addPurchase()
+	if err != nil {
+		return StockUpdate{}, err
+	}
+
+	// Create a StockUpdate instance to hold both updates and entries
+	stockUpdate := StockUpdate{
+		proformaStkUpdates: proformaStkUpdates,
+		purchaseStkUpdates: purchaseStkUpdates,
+		saleEntries:        saleEntries,
+		purchaseEntries:    purchaseEntries,
+	}
+	return stockUpdate, nil
 }

@@ -38,10 +38,10 @@ type CustomerData struct {
 	Origin     int    `json:"origin"`
 }
 
-func (product *ProductSlice) makeInvoice(format string, invoiceGroups map[string][]Proforma) error {
+func (product *ProductSlice) makeInvoiceWithStockData(format string, invoiceGroupedData *InvoiceGroupedData) error {
 
 	// Generate invoices grouped by invoice ID
-	for invoiceID, invoiceItems := range invoiceGroups {
+	for invoiceID, invoiceItems := range invoiceGroupedData.SalesByInvoice {
 		//fmt.Printf("\n=== Generating invoice: %s ===\n", invoiceID)
 		// Extract customer ID from the first item in this invoice
 		var customerID string
@@ -54,28 +54,35 @@ func (product *ProductSlice) makeInvoice(format string, invoiceGroups map[string
 			continue
 		}
 
-		// Create stockUpdates for this specific invoice
-		stockUpdates := make(map[string]map[string][]int)
-		for _, item := range invoiceItems {
-			// Initialize stock updates for this product if not exists
-			if stockUpdates[item.Product.UID] == nil {
-				stockUpdates[item.Product.UID] = make(map[string][]int)
-			}
+		// Use pre-calculated stock changes instead of recalculating
+		var stockUpdates map[string]map[string][]int
+		if preCalculatedStock, exists := invoiceGroupedData.StockChangesByInvoice[invoiceID]; exists {
+			// Use the pre-calculated stock data from inventory update process
+			stockUpdates = preCalculatedStock
+		} else {
+			// Fallback: calculate stockUpdates if not provided (for backward compatibility)
+			stockUpdates = make(map[string]map[string][]int)
+			for _, item := range invoiceItems {
+				// Initialize stock updates for this product if not exists
+				if stockUpdates[item.Product.UID] == nil {
+					stockUpdates[item.Product.UID] = make(map[string][]int)
+				}
 
-			// Track quantities for this invoice
-			for color, quantities := range item.Product.Color {
-				colorKey := strings.ToLower(color)
-				if existing, exists := stockUpdates[item.Product.UID][colorKey]; exists {
-					// Add to existing quantities
-					for i, qty := range quantities {
-						if i < len(existing) {
-							existing[i] += qty
+				// Track quantities for this invoice
+				for color, quantities := range item.Product.Color {
+					colorKey := strings.ToLower(color)
+					if existing, exists := stockUpdates[item.Product.UID][colorKey]; exists {
+						// Add to existing quantities
+						for i, qty := range quantities {
+							if i < len(existing) {
+								existing[i] += qty
+							}
 						}
+					} else {
+						// Initialize with current quantities
+						stockUpdates[item.Product.UID][colorKey] = make([]int, len(quantities))
+						copy(stockUpdates[item.Product.UID][colorKey], quantities)
 					}
-				} else {
-					// Initialize with current quantities
-					stockUpdates[item.Product.UID][colorKey] = make([]int, len(quantities))
-					copy(stockUpdates[item.Product.UID][colorKey], quantities)
 				}
 			}
 		}
@@ -318,4 +325,16 @@ func getCustomerData(fileName string) ([]CustomerData, error) {
 		return nil, err
 	}
 	return customers, nil
+}
+
+// makeInvoice - Original function for backward compatibility
+func (product *ProductSlice) makeInvoice(format string, invoiceGroups map[string][]Proforma) error {
+	// Create InvoiceGroupedData structure for the enhanced function
+	invoiceGroupedData := &InvoiceGroupedData{
+		SalesByInvoice:        invoiceGroups,
+		StockChangesByInvoice: nil, // Will trigger fallback calculation in makeInvoiceWithStockData
+	}
+
+	// Call the enhanced version
+	return product.makeInvoiceWithStockData(format, invoiceGroupedData)
 }
