@@ -107,63 +107,20 @@ func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]i
 	return nil
 }
 
-// ProcessInventoryUpdate - Main function to process proforma and purchase data and update inventory
-//func (data *JsLocalDB) ProcessInventoryUpdate(productData *ProductSlice) error {
-//	invoiceData, err := data.ProcessInventoryUpdateWithInvoiceData(productData)
-//	if err != nil {
-//		return err
-//	}
-//	_ = invoiceData // Suppress unused variable warning
-//	return nil
-//}
-
-// ProcessInventoryUpdateWithInvoiceData - Enhanced version that returns invoice-grouped data
-func (data *JsLocalDB) ProcessInventoryUpdateWithInvoiceData(productData *ProductSlice) (*InvoiceGroupedData, error) {
-	// Step 1: Process proforma items and get stock updates + sale entries
-	proformaStockUpdates, saleEntries, err := productData.addProforma()
-	if err != nil {
-		return nil, fmt.Errorf("failed to process proforma data: %w", err)
-	}
-
-	// Step 2: Process purchase items and get stock updates + purchase entries
-	purchaseStockUpdates, purchaseEntries, err := productData.addPurchase()
-	if err != nil {
-		return nil, fmt.Errorf("failed to process purchase data: %w", err)
-	}
-
-	// Step 3: Create enhanced StockUpdate struct with all data
-	stockUpdate := &StockUpdate{
-		proformaStkUpdates: proformaStockUpdates,
-		purchaseStkUpdates: purchaseStockUpdates,
-		saleEntries:        saleEntries,
-		purchaseEntries:    purchaseEntries,
-	}
-
-	// Step 4: Update inventory with everything in the stockUpdate struct
-	invoiceGroupedData, err := data.updateInventoryFromStockUpdate(stockUpdate)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update inventory: %w", err)
-	}
-
-	// Return the invoice-grouped data for invoice generation
-	return invoiceGroupedData, nil
-}
-
-// updateInventoryFromStockUpdate - Simplified version that gets all data from StockUpdate struct
-func (data *JsLocalDB) updateInventoryFromStockUpdate(stockUpdate *StockUpdate) (*InvoiceGroupedData, error) {
-
-	// Step 2: Get current stock levels using existing function
+func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) (*InvoiceGroupedData, error) {
+	// Step 1: Get current inventory and in_stock values
 	allEntries, currentStock, err := data.getExistingStock()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get existing stock: %w", err)
 	}
 
-	// Step 3: Apply stock calculations using existing dataCalculation function
+	// Step 2: Apply stock calculations (subtract for sales, add for purchases)
+	// This modifies the currentStock map with the new calculated values
 	if err := stockUpdate.dataCalculation(currentStock); err != nil {
 		return nil, fmt.Errorf("failed to calculate stock updates: %w", err)
 	}
 
-	// Step 4: Create grouped data for invoice generation
+	// Step 3: Create grouped data for invoice generation
 	invoiceGroupedData := &InvoiceGroupedData{
 		SalesByInvoice:        make(map[string][]Proforma),
 		StockChangesByInvoice: make(map[string]map[string]map[string][]int),
@@ -206,22 +163,22 @@ func (data *JsLocalDB) updateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 	// but they don't need to be grouped by invoice for invoice generation
 	// since purchases don't generate customer invoices
 
-	// Step 5: Update in_stock entries with calculated values
+	// Step 4: Update in_stock entries with calculated values
+	// This is where we actually update the in_stock quantities in the inventory
 	for i := range allEntries {
 		if allEntries[i].Type == "in_stock" {
 			productUID := allEntries[i].Product.UID
 			if updatedStock, exists := currentStock[productUID]; exists {
+				// Clear existing color data and replace with updated values
+				allEntries[i].Product.Color = make(map[string][]int)
+
 				// Update the color quantities with calculated values
 				for color, newQuantities := range updatedStock {
-					// Find matching color in existing entry (case-insensitive)
-					for existingColor := range allEntries[i].Product.Color {
-						if strings.EqualFold(existingColor, color) {
-							allEntries[i].Product.Color[existingColor] = make([]int, len(newQuantities))
-							copy(allEntries[i].Product.Color[existingColor], newQuantities)
-							break
-						}
-					}
+					// Copy the updated quantities to the allEntries
+					allEntries[i].Product.Color[color] = make([]int, len(newQuantities))
+					copy(allEntries[i].Product.Color[color], newQuantities)
 				}
+
 				// Recalculate total for this product
 				total := 0
 				for _, quantities := range allEntries[i].Product.Color {
@@ -234,7 +191,7 @@ func (data *JsLocalDB) updateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 		}
 	}
 
-	// Step 5: Add new sale entries from stockUpdate
+	// Step 5: Add new sale entries from stockUpdate (transaction history)
 	for _, saleEntry := range stockUpdate.saleEntries {
 		newEntry := In_stockTshirtStruct{
 			UUID:     saleEntry.UUID,
@@ -249,7 +206,7 @@ func (data *JsLocalDB) updateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 		allEntries = append(allEntries, newEntry)
 	}
 
-	// Step 6: Add new purchase entries from stockUpdate
+	// Step 6: Add new purchase entries from stockUpdate (transaction history)
 	for _, purchaseEntry := range stockUpdate.purchaseEntries {
 		newEntry := In_stockTshirtStruct{
 			UUID:     purchaseEntry.UUID,
@@ -270,34 +227,9 @@ func (data *JsLocalDB) updateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 		return nil, fmt.Errorf("failed to marshal updated inventory: %w", err)
 	}
 
-	if err := os.WriteFile(data.file, updatedData, 0644); err != nil {
+	if err := os.WriteFile(data.File, updatedData, 0644); err != nil {
 		return nil, fmt.Errorf("failed to write updated inventory: %w", err)
 	}
 
 	return invoiceGroupedData, nil
-}
-
-// ExampleUsage demonstrates the enhanced integration
-func ExampleUsage() error {
-	// Step 1: Initialize database connection with inventory file path
-	db := &JsLocalDB{file: "Data/inventory.json"}
-
-	// Step 2: Load your product data from CSV or manual input
-	var productData ProductSlice
-	// ... populate productData with proforma and purchase items ...
-
-	// Step 3: Process all updates and get invoice-grouped data
-	invoiceGroupedData, err := db.ProcessInventoryUpdateWithInvoiceData(&productData)
-	if err != nil {
-		return fmt.Errorf("inventory update failed: %w", err)
-	}
-
-	// Step 4: Generate invoices using the simplified enhanced function
-	err = productData.makeInvoiceWithStockData("table", invoiceGroupedData)
-	if err != nil {
-		return fmt.Errorf("failed to generate invoices: %w", err)
-	}
-
-	fmt.Println("✅ Inventory updated and invoices generated successfully!")
-	return nil
 }

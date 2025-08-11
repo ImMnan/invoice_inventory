@@ -8,6 +8,11 @@ func (product *ProductSlice) addPurchase() (map[string]map[string][]int, []Purch
 	var purchaseEntries []Purchase
 
 	for _, productItem := range *product {
+		// Only process purchase-invoice entries, skip proforma entries
+		if productItem.Type != "purchase-invoice" {
+			continue
+		}
+
 		purchaseEntry := Purchase{
 			UUID:    productItem.UUID,
 			Type:    productItem.Type,

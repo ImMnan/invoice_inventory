@@ -52,17 +52,18 @@ type ManualData struct {
 }
 
 type JsLocalDB struct {
-	file string
+	File string
 }
 type StockData interface {
 	existingStock() (map[string]map[string][]int, error)
 	updateInventoryFromStockUpdate(StockUpdate) (InvoiceGroupedData, error)
 }
 
-type ApplyData interface {
+type MakeData interface {
 	addProforma() (map[string]map[string][]int, []Proforma, error)
 	addPurchase() (map[string]map[string][]int, []Purchase, error)
 }
+
 type StockUpdate struct {
 	proformaStkUpdates map[string]map[string][]int
 	purchaseStkUpdates map[string]map[string][]int
@@ -76,13 +77,13 @@ type InvoiceGroupedData struct {
 	StockChangesByInvoice map[string]map[string]map[string][]int // invoiceID -> productUID -> color -> quantities (for optimization)
 }
 
-func ApplyStkUpdate(applyData ApplyData) (StockUpdate, error) {
+func MakeStkUpdate(mkd MakeData) (StockUpdate, error) {
 	// Process inventory updates and generate invoices for each invoice group
-	proformaStkUpdates, saleEntries, err := applyData.addProforma()
+	proformaStkUpdates, saleEntries, err := mkd.addProforma()
 	if err != nil {
 		return StockUpdate{}, err
 	}
-	purchaseStkUpdates, purchaseEntries, err := applyData.addPurchase()
+	purchaseStkUpdates, purchaseEntries, err := mkd.addPurchase()
 	if err != nil {
 		return StockUpdate{}, err
 	}
@@ -95,14 +96,4 @@ func ApplyStkUpdate(applyData ApplyData) (StockUpdate, error) {
 		purchaseEntries:    purchaseEntries,
 	}
 	return stockUpdate, nil
-}
-
-func AddStkUpdate(StkDB StockData, stockUpdate StockUpdate) (InvoiceGroupedData, error) {
-	invoiceGroupedData, err := StkDB.updateInventoryFromStockUpdate(stockUpdate)
-	if err != nil {
-		return InvoiceGroupedData{}, err
-	}
-
-	// Return the grouped data for invoice generation
-	return invoiceGroupedData, nil
 }

@@ -1,6 +1,8 @@
 package apply
 
 import (
+	"fmt"
+
 	"github.com/immnan/invoice_invoice/pkg"
 	"github.com/spf13/cobra"
 )
@@ -37,20 +39,40 @@ func init() {
 // Execute adds all child commands to the root command and sets flags appropriately.
 
 func applyProforma(fileName string, confirm, csv bool) {
+	var format string
+	if csv {
+		format = "csv"
+	} else {
+		format = "table"
+	}
 
-	var data *pkg.FileData
+	var updateData *pkg.FileData
 	if fileName != "" {
-		data = &pkg.FileData{Data: fileName}
+		updateData = &pkg.FileData{Data: fileName}
 	}
-	//var productData *pkg.ProductSlice
-	stockUpdate, err := data.UpdateStock()
+	ProductSlice, err := updateData.GetStockUpdate()
 	if err != nil {
-		panic(err)
+		fmt.Printf("failed to get stock update: %v", err)
+		return
 	}
 
-	data.ProcessInventoryUpdate(stockUpdate)
+	stockUpdate, err := pkg.MakeStkUpdate(&ProductSlice)
 	if err != nil {
-		panic(err)
+		fmt.Printf("failed to make stock update: %v", err)
+		return
+	}
+
+	existData := &pkg.JsLocalDB{File: "Data/inventory.json"}
+
+	invoiceGroupedData, err := existData.UpdateInventoryFromStockUpdate(&stockUpdate)
+	if err != nil {
+		fmt.Printf("failed to update inventory from stock update: %v", err)
+		return
+	}
+
+	if err := ProductSlice.MakeInvoiceWithStockData(format, invoiceGroupedData); err != nil {
+		fmt.Printf("failed to make invoice with stock data: %v", err)
+		return
 	}
 
 }

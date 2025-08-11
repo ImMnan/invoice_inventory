@@ -16,7 +16,7 @@ import (
 //	return demo
 //}
 
-func (file FileData) GetStockUpdate() (ProductSlice, error) {
+func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 	dataFile, err := os.Open(file.Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open data file: %w", err)
@@ -246,7 +246,7 @@ func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 }
 
 func (data *JsLocalDB) getExistingStock() ([]In_stockTshirtStruct, map[string]map[string][]int, error) {
-	inventoryDB, err := os.Open(data.file)
+	inventoryDB, err := os.Open(data.File)
 	if err != nil {
 		return []In_stockTshirtStruct{}, nil, err
 	}

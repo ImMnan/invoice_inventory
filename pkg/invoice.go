@@ -38,7 +38,7 @@ type CustomerData struct {
 	Origin     int    `json:"origin"`
 }
 
-func (product *ProductSlice) makeInvoiceWithStockData(format string, invoiceGroupedData *InvoiceGroupedData) error {
+func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGroupedData *InvoiceGroupedData) error {
 
 	// Generate invoices grouped by invoice ID
 	for invoiceID, invoiceItems := range invoiceGroupedData.SalesByInvoice {
@@ -273,25 +273,6 @@ func (product *ProductSlice) makeInvoiceWithStockData(format string, invoiceGrou
 			}
 		}
 
-		// Following is the output I need to be passed to a txt file.
-		// SHRIKRISHNA TECH, GST: 1234567890, India
-
-		// Type, Invoice, Date
-		// Invoice, SKCP-001, 2023-01-01
-
-		// Name, Address, Gst Number, Country, Date
-		// RK Tees, Navsari, 1234567890, India, 2023-01-01
-
-		// Product ID, Product Name, Price, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total, Amount
-		// CO180G-RG, 100% Cotton | T-Shirt | Bio-Washed, 200, Red, 1, 5, 5, 5, 5, 5, 1, 1, 28, 5600
-
-		// if tax invoice
-		// iGST, sGST, GstTotal
-		// 2.5%, 2.5%, 5% of Amount (i.e 280)
-
-		// TaxInvoice Total amount, Payment Terms, Payment Mode
-		// 5880, Due on Receipt, Online Transfer/Cash
-
 	}
 	return nil
 }
@@ -325,16 +306,4 @@ func getCustomerData(fileName string) ([]CustomerData, error) {
 		return nil, err
 	}
 	return customers, nil
-}
-
-// makeInvoice - Original function for backward compatibility
-func (product *ProductSlice) makeInvoice(format string, invoiceGroups map[string][]Proforma) error {
-	// Create InvoiceGroupedData structure for the enhanced function
-	invoiceGroupedData := &InvoiceGroupedData{
-		SalesByInvoice:        invoiceGroups,
-		StockChangesByInvoice: nil, // Will trigger fallback calculation in makeInvoiceWithStockData
-	}
-
-	// Call the enhanced version
-	return product.makeInvoiceWithStockData(format, invoiceGroupedData)
 }
