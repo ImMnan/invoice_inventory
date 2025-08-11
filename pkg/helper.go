@@ -67,8 +67,8 @@ type MakeData interface {
 type StockUpdate struct {
 	proformaStkUpdates map[string]map[string][]int
 	purchaseStkUpdates map[string]map[string][]int
-	saleEntries        []Proforma
-	purchaseEntries    []Purchase
+	SaleEntries        []Proforma
+	PurchaseEntries    []Purchase
 }
 
 // InvoiceGroupedData represents the data grouped by invoice ID for invoice generation
@@ -92,8 +92,8 @@ func MakeStkUpdate(mkd MakeData) (StockUpdate, error) {
 	stockUpdate := StockUpdate{
 		proformaStkUpdates: proformaStkUpdates,
 		purchaseStkUpdates: purchaseStkUpdates,
-		saleEntries:        saleEntries,
-		purchaseEntries:    purchaseEntries,
+		SaleEntries:        saleEntries,
+		PurchaseEntries:    purchaseEntries,
 	}
 	return stockUpdate, nil
 }

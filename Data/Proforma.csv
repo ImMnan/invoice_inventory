@@ -1,4 +1,4 @@
 Type, Invoice, For, Product_Id, Date, Price,Gst, Print, Gen, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total
-proforma, 12, SK21-001, CO180G-RG, 8/3/2025,200, 0, Goku, Male, Red, 1,1,1,1,1,1,1,1, 8
-proforma, 12, SK21-001, CO240G-RL, 8/3/2025,300, 0, Hades, Male, Black, 1,1,1,1,1,1,1,1, 8
-proforma, 13, SK21-001, CO240G-RL, 8/3/2025,300, 0, Hades, Male, Red, 1,1,1,1,1,1,1,1, 8
+proforma, 12, SK21-001, CO180G-RG, 8/3/2025,200, 0, Goku, Male, Red, ,,1,1,1,1,,, 4
+proforma, 12, SK21-001, CO240G-RL, 8/3/2025,300, 0, Hades, Male, Black, ,,1,1,1,1,,, 4
+proforma, 13, SK21-001, CO240G-RL, 8/3/2025,300, 0, Hades, Male, Red, ,,1,1,1,1,,, 4

@@ -1,3 +1,4 @@
 Type, Invoice, Product_Id, Date, Gen, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Total
-purchase-invoice, 16, CO180G-RG, 8/3/2025, Male, Red, 1,5,5,5,5,5,1,1, 28
-purchase-invoice, 16, CO240G-RL, 8/3/2025, Male, Black, 1,5,5,5,5,5,1,1, 28
+purchase-invoice, 16, CO180G-RG, 8/3/2025, Male, Red, ,,1,1,1,1,,, 4
+purchase-invoice, 16, CO240G-RL, 8/3/2025, Male, Black, ,,1,1,1,1,,, 4
+purchase-invoice, 16, CO240G-RL, 8/3/2025, Male, Red, ,,1,1,1,1,,, 4

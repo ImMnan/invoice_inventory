@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-type Invoice struct {
-	Type    string        `json:"type"`
-	For     string        `json:"for,omitempty"`
-	Invoice string        `json:"invoice"`
-	Date    string        `json:"date,omitempty"`
-	IsPaid  bool          `json:"isPaid"`
-	Product ProductStruct `json:"product"`
-}
+//type Invoice struct {
+//	Type    string        `json:"type"`
+//	For     string        `json:"for,omitempty"`
+//	Invoice string        `json:"invoice"`
+//	Date    string        `json:"date,omitempty"`
+//	IsPaid  bool          `json:"isPaid"`
+//	Product ProductStruct `json:"product"`
+//}
 
 type ProductData struct {
 	ProductId   string              `json:"product_id"`
@@ -87,10 +87,6 @@ func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGrou
 			}
 		}
 
-		//var proformaItems []Proforma
-		//if err := json.Unmarshal(proformaData, &proformaItems); err != nil {
-		//	return fmt.Errorf("failed to parse proforma data: %v", err)
-		//}
 		// Create a map to lookup print and price data from proforma items
 		printMap := make(map[string]string)
 		priceMap := make(map[string]float64)
@@ -144,17 +140,6 @@ func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGrou
 				selectedCustomer.GstNumber,
 				time.Now().Format("2006-01-02"))
 			invoiceTab.Flush()
-			//	customerTab := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			// Print customer details first
-			//	fmt.Fprintln(customerTab, "\nNAME\tADDRESS\tGST NUMBER")
-			//	fmt.Fprintf(customerTab, "%s\t%s\t%s\n\n",
-			//		selectedCustomer.Name,
-			//		selectedCustomer.Address,
-			//		selectedCustomer.GstNumber)
-
-			//			customerTab.Flush()
-
-			// Use tabwriter for aligned table output
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
 			// Print product header
@@ -218,8 +203,30 @@ func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGrou
 
 		}
 		if format == "csv" {
-			// CSV format output
-			fmt.Println("Product ID,Product Name,Price,PRINT,Color,XS,S,M,L,XL,2XL,3XL,4XL,Total,Amount")
+			fmt.Println("\nFROM, SHIRIKRISHNA TECH,\nGST, 1234567890,\nCOO, INDIA\nCONTACT, 9725359497\n")
+			//invoiceTab := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+			// Print invoice header
+			//			fmt.Fprintln(invoiceTab, "\nTYPE,\tINVOICE,\tNAME,\tADDRESS,\tGST NUMBER,\tDATE")
+			//			fmt.Fprintf(invoiceTab, "%s,\t%s,\t%s,\t%s,\t%s,\t%s,\n\n", "Sales Invoice",
+			//				invoiceID,
+			//				selectedCustomer.Name,
+			//				selectedCustomer.Address,
+			//				selectedCustomer.GstNumber,
+			//				time.Now().Format("2006-01-02"))
+			//			invoiceTab.Flush()
+
+			fmt.Printf("TYPE,Sales Invoice,\nINVOICE,%s\n,NAME,%s\n,ADDRESS,%s\n,GST NUMBER,%s\n,DATE,%s\n",
+				invoiceID,
+				selectedCustomer.Name,
+				selectedCustomer.Address,
+				selectedCustomer.GstNumber,
+				time.Now().Format("2006-01-02"))
+
+			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+
+			// Print product header
+			fmt.Fprintln(w, "PRODUCT ID,\tPRODUCT Name,\tPRICE,\tPRINT,\tCOLOR,\tXS,\tS,\tM,\tL,\tXL,\t2X,\t3X,\t4X,\tTOTAL,\tAMOUNT")
+			//	fmt.Fprintln(w, "----------,\t------------,\t-----,\t-----,\t-----,\t--,\t--,\t--,\t--,\t--,\t--,\t--,\t--,\t----,\t----")
 
 			// Process each product in stockUpdates
 			for productId, colors := range stockUpdates {
@@ -252,13 +259,14 @@ func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGrou
 						printValue = "N/A" // fallback if no print data
 					}
 
-					// Format the line as CSV
-					line := fmt.Sprintf("%s,%s,%.0f,%s,%s",
+					// Format the line with tabs for tabwriter
+					line := fmt.Sprintf("%s,\t%s,\t%.0f,\t%s,\t%s,",
 						productId,
 						productInfo.Name,
 						price,
 						printValue,
-						color)
+						color,
+					)
 
 					// Add size quantities
 					for _, qty := range quantities {
@@ -268,13 +276,17 @@ func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGrou
 					// Add total and amount
 					line += fmt.Sprintf(",%d,%.0f", total, amount)
 
-					fmt.Println(line)
+					fmt.Fprintln(w, line)
 				}
 			}
-		}
 
+			// Flush the tabwriter to display the formatted table
+			w.Flush()
+
+		}
 	}
 	return nil
+
 }
 
 func getProductData(fileName string) ([]ProductData, error) {

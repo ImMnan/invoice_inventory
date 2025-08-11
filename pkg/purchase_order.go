@@ -15,7 +15,7 @@ func (product *ProductSlice) addPurchase() (map[string]map[string][]int, []Purch
 
 		purchaseEntry := Purchase{
 			UUID:    productItem.UUID,
-			Type:    productItem.Type,
+			Type:    "purchase",
 			From:    productItem.From, // Copy vendor ID
 			Invoice: productItem.Invoice,
 			Date:    productItem.Date,

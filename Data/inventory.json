@@ -12,27 +12,27 @@
       "gst": "0%",
       "color": {
         "black": [
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2
+          0,
+          10,
+          10,
+          10,
+          10,
+          10,
+          0,
+          0
         ],
         "red": [
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2
+          0,
+          10,
+          7,
+          7,
+          7,
+          7,
+          0,
+          0
         ]
       },
-      "total": 32,
+      "total": 88,
       "price": 0
     }
   },
@@ -50,27 +50,298 @@
       "gst": "0%",
       "color": {
         "black": [
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2
+          0,
+          10,
+          7,
+          7,
+          7,
+          7,
+          0,
+          0
         ],
         "red": [
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2,
-          2
+          0,
+          10,
+          7,
+          7,
+          7,
+          7,
+          0,
+          0
+        ],
+        "white": [
+          0,
+          10,
+          10,
+          10,
+          10,
+          10,
+          0,
+          0
         ]
       },
-      "total": 32,
+      "total": 126,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "386df486-090e-4070-bfe8-3f59f4eb5bb9",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO180G-RG",
+      "print": "Goku",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "red": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 4,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "c3dbb827-d7cc-4f1b-a26d-b2cb6eb19403",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO240G-RL",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "black": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 4,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "10e7e21c-c24e-45e9-8de9-e438f65a5dea",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "13",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO240G-RL",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "red": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 4,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "67b30e76-5d3a-4087-a534-ba0e83d761a2",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO180G-RG",
+      "print": "Goku",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "red": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 4,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "99ae2423-29dd-43d2-884a-89f80ce78bf9",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO240G-RL",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "black": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 4,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "a6bee831-7eb2-4d0d-959e-d4f568eac18b",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "13",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO240G-RL",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "red": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 4,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "0a1e998d-bd35-456d-a881-0f0b63a939ec",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO180G-RG",
+      "print": "Goku",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "red": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 4,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "313e2026-03ea-4a1f-91e1-143e9daee68f",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO240G-RL",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "black": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 4,
+      "price": 0
+    }
+  },
+  {
+    "uuid": "db63efed-b3f0-410c-ad59-abea892b4db8",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "13",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "uid": "CO240G-RL",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": "0",
+      "color": {
+        "red": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 4,
       "price": 0
     }
   }

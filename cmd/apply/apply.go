@@ -61,18 +61,36 @@ func applyProforma(fileName string, confirm, csv bool) {
 		fmt.Printf("failed to make stock update: %v", err)
 		return
 	}
-
 	existData := &pkg.JsLocalDB{File: "Data/inventory.json"}
 
-	invoiceGroupedData, err := existData.UpdateInventoryFromStockUpdate(&stockUpdate)
-	if err != nil {
-		fmt.Printf("failed to update inventory from stock update: %v", err)
-		return
-	}
+	if !confirm {
+		switch {
+		case stockUpdate.SaleEntries != nil:
+			fmt.Println("Proforma stock updates found, processing...")
+			for _, entry := range stockUpdate.SaleEntries {
+				fmt.Printf("%v\n", entry)
+			}
+		case stockUpdate.PurchaseEntries != nil:
+			fmt.Println("Purchase stock updates found, processing...")
+			for _, entry := range stockUpdate.PurchaseEntries {
+				fmt.Printf("%v\n", entry)
+			}
+		default:
+			fmt.Println("No stock updates found, nothing to apply.")
+			return
+		}
+	} else if confirm {
+		invoiceGroupedData, err := existData.UpdateInventoryFromStockUpdate(&stockUpdate)
+		if err != nil {
+			fmt.Printf("failed to update inventory from stock update: %v", err)
+			return
+		}
 
-	if err := ProductSlice.MakeInvoiceWithStockData(format, invoiceGroupedData); err != nil {
-		fmt.Printf("failed to make invoice with stock data: %v", err)
-		return
+		if err := ProductSlice.MakeInvoiceWithStockData(format, invoiceGroupedData); err != nil {
+			fmt.Printf("failed to make invoice with stock data: %v", err)
+			return
+		}
+	} else {
+		fmt.Println("Changes not applied. Use --approve to confirm.")
 	}
-
 }

@@ -27,15 +27,14 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read csv data: %w", err)
 	}
-	poData := dataValue
 	var productData []TshirtStruct
 
-	for i, row := range poData {
-		if row[0] == "proforma" && row[0] != "purchase-invoice" { // Ensure we only process proforma rows
+	for i, row := range dataValue {
+		if i == 0 { // Skip header row
+			continue
+		}
+		if row[0] == "proforma" { // Ensure we only process proforma rows
 
-			if i == 0 { // Skip header row
-				continue
-			}
 			if len(row) < 18 { // Ensure we have all required columns
 				continue
 			}
@@ -87,28 +86,24 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 					Total: total,
 				},
 			})
-		}
+		} else if row[0] == "purchase-invoice" { // Ensure we only process purchase invoice rows
 
-		if row[0] == "purchase-invoice" && row[0] != "proforma" {
-			if i == 0 { // Skip header row
-				continue
-			}
 			if len(row) < 15 { // Ensure we have all required columns
 				continue
 			}
 			// Parse size quantities
 			colorMap := make(map[string][]int)
 			quantities := make([]int, 8)
-			// Parse quantities for each size (columns 8-15)
+			// Parse quantities for each size (columns 6-13)
 			for j := 0; j < 8; j++ {
 				if qty, err := strconv.Atoi(strings.TrimSpace(row[6+j])); err == nil {
 					quantities[j] = qty
 				}
 			}
-			// Color is in column 6, use it as key for the map
+			// Color is in column 5, use it as key for the map
 			color := strings.TrimSpace(row[5])
 			colorMap[color] = quantities
-			// Parse total (column 16)
+			// Parse total (column 14)
 			total := 0
 			if totalStr := strings.TrimSpace(row[14]); totalStr != "" {
 				if t, err := strconv.Atoi(totalStr); err == nil {
@@ -118,17 +113,19 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 
 			productData = append(productData, TshirtStruct{
 				UUID:    uuid.New().String(),
-				Type:    "purchase",
-				Invoice: row[1],
+				Type:    strings.TrimSpace(row[0]),
+				Invoice: strings.TrimSpace(row[1]),
 				Date:    strings.TrimSpace(row[3]), // Date
-				From:    strings.TrimSpace(row[2]), // Vendor ID
+				From:    "vendor",                  // Default vendor since it's not in CSV
 				Product: ProductStruct{
 					UID:   strings.TrimSpace(row[2]), // Product_Id
-					Gen:   strings.TrimSpace(row[5]), // Gen
+					Gen:   strings.TrimSpace(row[4]), // Gen
 					Color: colorMap,
 					Total: total,
 				},
 			})
+		} else {
+			return nil, fmt.Errorf("invalid row type %s at row %d", row[0], i)
 		}
 
 	}
