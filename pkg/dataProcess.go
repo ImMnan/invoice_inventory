@@ -245,21 +245,21 @@ func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 	return productData, nil
 }
 
-func (data *JsLocalDB) getExistingStock() (map[string]map[string][]int, error) {
-	inventory, err := os.Open(data.file)
+func (data *JsLocalDB) getExistingStock() ([]In_stockTshirtStruct, map[string]map[string][]int, error) {
+	inventoryDB, err := os.Open(data.file)
 	if err != nil {
-		return nil, err
+		return []In_stockTshirtStruct{}, nil, err
 	}
-	defer inventory.Close()
-	var stock []In_stockTshirtStruct
-	if err := json.NewDecoder(inventory).Decode(&stock); err != nil {
-		return nil, err
+	defer inventoryDB.Close()
+	var allEntries []In_stockTshirtStruct
+	if err := json.NewDecoder(inventoryDB).Decode(&allEntries); err != nil {
+		return []In_stockTshirtStruct{}, nil, err
 	}
 	// Collect current stock state and apply subtractions
 	currentStock := make(map[string]map[string][]int) // productUID -> color -> quantities
 
 	// First, collect all existing in_stock data
-	for _, item := range stock {
+	for _, item := range allEntries {
 		if item.Type == "in_stock" {
 			if currentStock[item.Product.UID] == nil {
 				currentStock[item.Product.UID] = make(map[string][]int)
@@ -270,5 +270,5 @@ func (data *JsLocalDB) getExistingStock() (map[string]map[string][]int, error) {
 			}
 		}
 	}
-	return currentStock, nil
+	return allEntries, currentStock, nil
 }

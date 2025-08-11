@@ -151,20 +151,9 @@ func (data *JsLocalDB) ProcessInventoryUpdateWithInvoiceData(productData *Produc
 
 // updateInventoryFromStockUpdate - Simplified version that gets all data from StockUpdate struct
 func (data *JsLocalDB) updateInventoryFromStockUpdate(stockUpdate *StockUpdate) (*InvoiceGroupedData, error) {
-	// Step 1: Read current inventory
-	inventory, err := os.Open(data.file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open inventory file: %w", err)
-	}
-	defer inventory.Close()
-
-	var allEntries []In_stockTshirtStruct
-	if err := json.NewDecoder(inventory).Decode(&allEntries); err != nil {
-		return nil, fmt.Errorf("failed to decode inventory: %w", err)
-	}
 
 	// Step 2: Get current stock levels using existing function
-	currentStock, err := data.getExistingStock()
+	allEntries, currentStock, err := data.getExistingStock()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get existing stock: %w", err)
 	}

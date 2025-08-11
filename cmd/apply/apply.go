@@ -48,7 +48,7 @@ func applyProforma(fileName string, confirm, csv bool) {
 		panic(err)
 	}
 
-	err := data.ProcessInventoryUpdate(stockUpdate)
+	data.ProcessInventoryUpdate(stockUpdate)
 	if err != nil {
 		panic(err)
 	}

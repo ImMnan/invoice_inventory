@@ -56,7 +56,7 @@ type JsLocalDB struct {
 }
 type StockData interface {
 	existingStock() (map[string]map[string][]int, error)
-	ProcessInventoryUpdate() (map[string]map[string][]int, ProductSlice, error)
+	updateInventoryFromStockUpdate(StockUpdate) (InvoiceGroupedData, error)
 }
 
 type ApplyData interface {
@@ -76,7 +76,7 @@ type InvoiceGroupedData struct {
 	StockChangesByInvoice map[string]map[string]map[string][]int // invoiceID -> productUID -> color -> quantities (for optimization)
 }
 
-func UpdateData(applyData ApplyData) (StockUpdate, error) {
+func ApplyStkUpdate(applyData ApplyData) (StockUpdate, error) {
 	// Process inventory updates and generate invoices for each invoice group
 	proformaStkUpdates, saleEntries, err := applyData.addProforma()
 	if err != nil {
@@ -95,4 +95,14 @@ func UpdateData(applyData ApplyData) (StockUpdate, error) {
 		purchaseEntries:    purchaseEntries,
 	}
 	return stockUpdate, nil
+}
+
+func AddStkUpdate(StkDB StockData, stockUpdate StockUpdate) (InvoiceGroupedData, error) {
+	invoiceGroupedData, err := StkDB.updateInventoryFromStockUpdate(stockUpdate)
+	if err != nil {
+		return InvoiceGroupedData{}, err
+	}
+
+	// Return the grouped data for invoice generation
+	return invoiceGroupedData, nil
 }
