@@ -1,0 +1,33 @@
+
+FROM: SHIRIKRISHNA TECH
+GST: 1234567890
+COO: INDIA
+CONTACT: 9725359497
+---
+TYPE: Sales Invoice,
+INVOICE: 13,
+NAME: RK Tees,
+ADDRESS: Navsari,
+GST NUMBER: 27AABFRK1234C1Z5,
+DATE: 2025-08-11
+
+PRODUCT ID  PRODUCT Name                PRICE  PRINT  COLOR  XS  S   M   L   XL  2X  3X  4X  TOTAL  AMOUNT
+----------  ------------                -----  -----  -----  --  --  --  --  --  --  --  --  ----   ----
+CO240G-RL   Cotton Relaxed-fit T-Shirt  300    Hades  red    0   0   1   1   1   1   0   0   4      1200
+
+FROM: SHIRIKRISHNA TECH
+GST: 1234567890
+COO: INDIA
+CONTACT: 9725359497
+---
+TYPE: Sales Invoice,
+INVOICE: 12,
+NAME: RK Tees,
+ADDRESS: Navsari,
+GST NUMBER: 27AABFRK1234C1Z5,
+DATE: 2025-08-11
+
+PRODUCT ID  PRODUCT Name                PRICE  PRINT  COLOR  XS  S   M   L   XL  2X  3X  4X  TOTAL  AMOUNT
+----------  ------------                -----  -----  -----  --  --  --  --  --  --  --  --  ----   ----
+CO180G-RG   Cotton Regular-fit T-Shirt  200    Goku   red    0   0   1   1   1   1   0   0   4      800
+CO240G-RL   Cotton Relaxed-fit T-Shirt  300    Hades  black  0   0   1   1   1   1   0   0   4      1200

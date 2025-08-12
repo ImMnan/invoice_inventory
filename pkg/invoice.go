@@ -127,19 +127,18 @@ func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGrou
 		for _, product := range productsData {
 			productMap[product.ProductId] = product
 		}
+		// Save invoice as a json file - invoices.json
 
 		if format == "table" {
 			fmt.Println("\nFROM: SHIRIKRISHNA TECH\nGST: 1234567890\nCOO: INDIA\nCONTACT: 9725359497\n---")
-			invoiceTab := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 			// Print invoice header
-			fmt.Fprintln(invoiceTab, "\nTYPE\tINVOICE\tNAME\tADDRESS\tGST NUMBER\tDATE")
-			fmt.Fprintf(invoiceTab, "%s\t%s\t%s\t%s\t%s\t%s\n\n", "Sales Invoice",
+			fmt.Printf("TYPE: Sales Invoice,\nINVOICE: %s,\nNAME: %s,\nADDRESS: %s,\nGST NUMBER: %s,\nDATE: %s\n\n",
 				invoiceID,
 				selectedCustomer.Name,
 				selectedCustomer.Address,
 				selectedCustomer.GstNumber,
 				time.Now().Format("2006-01-02"))
-			invoiceTab.Flush()
+
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
 			// Print product header
@@ -215,7 +214,7 @@ func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGrou
 			//				time.Now().Format("2006-01-02"))
 			//			invoiceTab.Flush()
 
-			fmt.Printf("TYPE,Sales Invoice,\nINVOICE,%s\n,NAME,%s\n,ADDRESS,%s\n,GST NUMBER,%s\n,DATE,%s\n",
+			fmt.Printf("TYPE,Sales Invoice,\nINVOICE,%s,\nNAME,%s,\nADDRESS,%s,\nGST NUMBER,%s,\nDATE,%s\n\n",
 				invoiceID,
 				selectedCustomer.Name,
 				selectedCustomer.Address,
@@ -284,6 +283,7 @@ func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGrou
 			w.Flush()
 
 		}
+
 	}
 	return nil
 

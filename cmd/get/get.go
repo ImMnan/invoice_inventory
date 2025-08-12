@@ -25,6 +25,8 @@ type Stocks struct {
 	UUID     string        `json:"uuid"`
 	Type     string        `json:"type"`
 	Invoice  string        `json:"invoice"`
+	For      string        `json:"for,omitempty"`
+	From     string        `json:"from,omitempty"`
 	Date     string        `json:"date,omitempty"`
 	IsPaid   bool          `json:"isPaid"`
 	Rejected bool          `json:"rejected"`

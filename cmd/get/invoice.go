@@ -1,8 +1,12 @@
 package get
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"text/tabwriter"
 
+	"github.com/immnan/invoice_invoice/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -16,8 +20,7 @@ var invoiceCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		invoiceID := args[0]
 		if invoiceID == "all" {
-
-			fmt.Println("Function to print all invoice values for that threshold time duration")
+			getInvoices()
 
 		}
 		fmt.Printf("Fetching invoice details for invoice ID: %s\n", invoiceID)
@@ -27,4 +30,29 @@ var invoiceCmd = &cobra.Command{
 
 func init() {
 	GetCmd.AddCommand(invoiceCmd)
+}
+
+func getInvoices() {
+	data, err := pkg.Stocks()
+	if err != nil {
+		fmt.Println("Error fetching stock data:", err)
+		return
+	}
+
+	var stocks []Stocks
+
+	json.Unmarshal(data, &stocks)
+	if err != nil {
+		fmt.Println("Error unmarshalling stock data:", err)
+		return
+	}
+	invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(invWr, "INVOICE,\tFOR,\tTYPE,\tPRODUCT ID,\tTOTAL,\tAMOUNT,\tDATE,\tIS PAID")
+	for _, stock := range stocks {
+		//	ammount := stock.Product.Total * stock.Product.Price
+		if stock.Invoice != "" || stock.Type != "NA" {
+			//	fmt.Fprintf(invWr, "%s\t%s\t%s\t%s\t%d\t%d\t%s\t%t\n", stock.Invoice, stock.For, stock.Type, stock.Product.UID, stock.Product.Total, stock.Date, stock.IsPaid)
+		}
+	}
+	invWr.Flush()
 }
