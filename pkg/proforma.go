@@ -30,12 +30,13 @@ func (product *ProductSlice) addProforma() (map[string]map[string][]int, []Profo
 				IsPaid:   false,
 				Rejected: false,
 				Product: ProductStruct{
-					UID:   productItem.Product.UID,
-					Print: productItem.Product.Print,
-					Gen:   productItem.Product.Gen,
-					GST:   productItem.Product.GST,
-					Color: make(map[string][]int),
-					Total: productItem.Product.Total,
+					ProductID: productItem.Product.ProductID,
+					Print:     productItem.Product.Print,
+					Gen:       productItem.Product.Gen,
+					GST:       productItem.Product.GST,
+					Color:     make(map[string][]int),
+					Quantity:  productItem.Product.Quantity,
+					Total:     productItem.Product.Total,
 				},
 			}
 			// Copy color data to sale entry (normalize color keys to lowercase)
@@ -45,14 +46,14 @@ func (product *ProductSlice) addProforma() (map[string]map[string][]int, []Profo
 
 			saleEntries = append(saleEntries, saleEntry)
 			// Initialize stock updates for this product if not exists
-			if stockUpdates[productItem.Product.UID] == nil {
-				stockUpdates[productItem.Product.UID] = make(map[string][]int)
+			if stockUpdates[productItem.Product.ProductID] == nil {
+				stockUpdates[productItem.Product.ProductID] = make(map[string][]int)
 			}
 
 			// Track quantities to subtract from stock
 			for color, quantities := range productItem.Product.Color {
 				colorKey := strings.ToLower(color)
-				if existing, exists := stockUpdates[productItem.Product.UID][colorKey]; exists {
+				if existing, exists := stockUpdates[productItem.Product.ProductID][colorKey]; exists {
 					// Add to existing quantities
 					for i, qty := range quantities {
 						if i < len(existing) {
@@ -61,8 +62,8 @@ func (product *ProductSlice) addProforma() (map[string]map[string][]int, []Profo
 					}
 				} else {
 					// Initialize with current quantities
-					stockUpdates[productItem.Product.UID][colorKey] = make([]int, len(quantities))
-					copy(stockUpdates[productItem.Product.UID][colorKey], quantities)
+					stockUpdates[productItem.Product.ProductID][colorKey] = make([]int, len(quantities))
+					copy(stockUpdates[productItem.Product.ProductID][colorKey], quantities)
 				}
 			}
 		}

@@ -25,13 +25,16 @@ type TshirtStruct struct {
 }
 
 type ProductStruct struct {
-	UID   string           `json:"uid"`
-	Print string           `json:"print"`
-	Gen   string           `json:"gen"`
-	GST   string           `json:"gst"`
-	Color map[string][]int `json:"color"`
-	Total int              `json:"total"`
-	Price int              `json:"price"`
+	ProductID   string           `json:"product_id"`
+	Name        string           `json:"name"`
+	Print       string           `json:"print"`
+	Gen         string           `json:"gen"`
+	GST         int              `json:"gst"`
+	Color       map[string][]int `json:"color"`
+	Total       int              `json:"total"`
+	Price       int              `json:"price"`
+	Description string           `json:"description"`
+	Quantity    int              `json:"quantity"`
 }
 
 type ProductSlice []TshirtStruct

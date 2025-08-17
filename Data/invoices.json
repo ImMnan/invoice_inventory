@@ -1,32 +1,56 @@
 [ 
-    {
-    "invoice": "12",
-    "type": "sale",
+  {
+    "type": "invoice",
+    "invoice_id": "12",
     "for": "SK21-001",
-    "invoice": "12",
     "date": "8/3/2025",
     "isPaid": false,
     "rejected": false,
-    "product": {
-      "uid": "CO240G-RL",
-      "print": "Hades",
-      "gen": "Male",
-      "gst": "0",
-      "color": {
-        "black": [
-          0,
-          0,
-          1,
-          1,
-          1,
-          1,
-          0,
-          0
-        ]
-      },
-      "total": 4,
-      "price": 200,
-      "ammount": 800
-    }
+    "total": 1600,
+    "taxType": 1680,
+    "product": [
+      {
+        "uid": "CO240G-RL",
+        "print": "Hades",
+        "gen": "Male",
+        "gst": "0",
+        "color": {
+          "black": [
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0
+          ]
+        },
+        "total": 4,
+        "price": 200,
+        "amount": 800
+        },
+        { 
+        "uid": "CO240G-RL",
+        "print": "Hades",
+        "gen": "Male",
+        "gst": "0",
+        "color": {
+          "black": [
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0
+          ]
+        },
+        "total": 4,
+        "price": 200,
+        "amount": 800
+      } 
+    ]
   }
 ]

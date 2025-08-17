@@ -162,7 +162,7 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 			invoiceGroupedData.StockChangesByInvoice[invoiceID] = make(map[string]map[string][]int)
 		}
 
-		productUID := saleEntry.Product.UID
+		productUID := saleEntry.Product.ProductID
 		if invoiceGroupedData.StockChangesByInvoice[invoiceID][productUID] == nil {
 			invoiceGroupedData.StockChangesByInvoice[invoiceID][productUID] = make(map[string][]int)
 		}
@@ -193,7 +193,7 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 	// This is where we actually update the in_stock quantities in the inventory
 	for i := range allEntries {
 		if allEntries[i].Type == "in_stock" {
-			productUID := allEntries[i].Product.UID
+			productUID := allEntries[i].Product.ProductID
 			if updatedStock, exists := currentStock[productUID]; exists {
 				// Clear existing color data and replace with updated values
 				allEntries[i].Product.Color = make(map[string][]int)
@@ -205,14 +205,20 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 					copy(allEntries[i].Product.Color[color], newQuantities)
 				}
 
-				// Recalculate total for this product
-				total := 0
+				// Recalculate quantities for this product
+				//total := 0
+				//for _, quantities := range allEntries[i].Product.Color {
+				//	for _, qty := range quantities {
+				//		total += qty
+				//	}
+				//}
+				quantity := 0
 				for _, quantities := range allEntries[i].Product.Color {
 					for _, qty := range quantities {
-						total += qty
+						quantity += qty
 					}
 				}
-				allEntries[i].Product.Total = total
+				allEntries[i].Product.Quantity = quantity
 			}
 		}
 	}

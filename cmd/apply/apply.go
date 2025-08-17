@@ -3,6 +3,7 @@ package apply
 import (
 	"fmt"
 
+	"github.com/immnan/invoice_invoice/get"
 	"github.com/immnan/invoice_invoice/pkg"
 	"github.com/spf13/cobra"
 )
@@ -15,6 +16,7 @@ var ApplyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		file, err := cmd.Flags().GetString("file")
 		approve, _ := cmd.Flags().GetBool("approve")
+		taxed, _ := cmd.Flags().GetBool("taxed")
 		csv := false
 		csv, _ = cmd.Flags().GetBool("csv")
 
@@ -22,8 +24,10 @@ var ApplyCmd = &cobra.Command{
 			// Handle error
 			return
 		}
+
 		if file != "" {
-			applyProforma(file, approve, csv)
+			applyProforma(file, approve, taxed, csv)
+
 		} else {
 			cmd.Help()
 		}
@@ -34,11 +38,12 @@ func init() {
 	ApplyCmd.Flags().StringP("file", "f", "", "File to apply changes from")
 	ApplyCmd.Flags().Bool("approve", false, "[!] Approve the changes")
 	ApplyCmd.Flags().BoolP("csv", "c", false, "Output in CSV format")
+	ApplyCmd.Flags().BoolP("taxed", "t", false, "Create/Apply TAX invoice")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 
-func applyProforma(fileName string, confirm, csv bool) {
+func applyProforma(fileName string, confirm, taxed, csv bool) {
 	var format string
 	if csv {
 		format = "csv"
@@ -86,9 +91,14 @@ func applyProforma(fileName string, confirm, csv bool) {
 			return
 		}
 
-		if err := ProductSlice.MakeInvoiceWithStockData(format, invoiceGroupedData); err != nil {
+		invoiceIDs, err := ProductSlice.ProcessInvoiceWithStockData(taxed, format, invoiceGroupedData)
+		if err != nil {
 			fmt.Printf("failed to make invoice with stock data: %v", err)
 			return
+		}
+
+		if err := get.PrintInvoice(format, invoiceIDs); err != nil {
+			fmt.Printf("failed to print invoice: %v", err)
 		}
 	} else {
 		fmt.Println("Changes not applied. Use --approve to confirm.")

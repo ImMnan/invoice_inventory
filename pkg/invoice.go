@@ -5,26 +5,18 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"text/tabwriter"
 	"time"
 )
 
-//type Invoice struct {
-//	Type    string        `json:"type"`
-//	For     string        `json:"for,omitempty"`
-//	Invoice string        `json:"invoice"`
-//	Date    string        `json:"date,omitempty"`
-//	IsPaid  bool          `json:"isPaid"`
-//	Product ProductStruct `json:"product"`
-//}
-
-type ProductData struct {
-	ProductId   string              `json:"product_id"`
-	Name        string              `json:"name"`
-	Colors      map[string][]string `json:"colors"`
-	Description string              `json:"description"`
-	Price       float64             `json:"price"`
-	Print       string              `json:"print"`
+type Invoice struct {
+	Type      string          `json:"type"`
+	InvoiceID string          `json:"invoice_id"`
+	Customer  CustomerData    `json:"customer"`
+	Date      string          `json:"date,omitempty"`
+	IsPaid    bool            `json:"isPaid"`
+	Product   []ProductStruct `json:"product"`
+	Amount    int             `json:"amount"`
+	TaxAmount int             `json:"tax_amount"`
 }
 
 type CustomerData struct {
@@ -38,71 +30,56 @@ type CustomerData struct {
 	Origin     int    `json:"origin"`
 }
 
-func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGroupedData *InvoiceGroupedData) error {
-
-	// Generate invoices grouped by invoice ID
+func (product *ProductSlice) ProcessInvoiceWithStockData(taxed bool, format string, invoiceGroupedData *InvoiceGroupedData) ([]string, error) {
+	var invoices []Invoice
+	var invoicesSlice []string
 	for invoiceID, invoiceItems := range invoiceGroupedData.SalesByInvoice {
-		//fmt.Printf("\n=== Generating invoice: %s ===\n", invoiceID)
-		// Extract customer ID from the first item in this invoice
 		var customerID string
 		if len(invoiceItems) > 0 {
 			customerID = invoiceItems[0].For
 		}
-
 		if customerID == "" {
 			fmt.Printf("Warning: No customer ID found for invoice %s, skipping...\n", invoiceID)
 			continue
 		}
 
-		// Use pre-calculated stock changes instead of recalculating
 		var stockUpdates map[string]map[string][]int
 		if preCalculatedStock, exists := invoiceGroupedData.StockChangesByInvoice[invoiceID]; exists {
-			// Use the pre-calculated stock data from inventory update process
 			stockUpdates = preCalculatedStock
 		} else {
-			// Fallback: calculate stockUpdates if not provided (for backward compatibility)
 			stockUpdates = make(map[string]map[string][]int)
 			for _, item := range invoiceItems {
-				// Initialize stock updates for this product if not exists
-				if stockUpdates[item.Product.UID] == nil {
-					stockUpdates[item.Product.UID] = make(map[string][]int)
+				if stockUpdates[item.Product.ProductID] == nil {
+					stockUpdates[item.Product.ProductID] = make(map[string][]int)
 				}
-
-				// Track quantities for this invoice
 				for color, quantities := range item.Product.Color {
 					colorKey := strings.ToLower(color)
-					if existing, exists := stockUpdates[item.Product.UID][colorKey]; exists {
-						// Add to existing quantities
+					if existing, exists := stockUpdates[item.Product.ProductID][colorKey]; exists {
 						for i, qty := range quantities {
 							if i < len(existing) {
 								existing[i] += qty
 							}
 						}
 					} else {
-						// Initialize with current quantities
-						stockUpdates[item.Product.UID][colorKey] = make([]int, len(quantities))
-						copy(stockUpdates[item.Product.UID][colorKey], quantities)
+						stockUpdates[item.Product.ProductID][colorKey] = make([]int, len(quantities))
+						copy(stockUpdates[item.Product.ProductID][colorKey], quantities)
 					}
 				}
 			}
 		}
 
-		// Create a map to lookup print and price data from proforma items
 		printMap := make(map[string]string)
 		priceMap := make(map[string]float64)
 		for _, item := range *product {
-			printMap[item.Product.UID] = item.Product.Print
-			priceMap[item.Product.UID] = float64(item.Product.Price)
+			printMap[item.Product.ProductID] = item.Product.Print
+			priceMap[item.Product.ProductID] = float64(item.Product.Price)
 		}
 
-		// Load customer data first to validate
 		customersData, err := getCustomerData("Data/customers.json")
 		if err != nil {
 			fmt.Println("Error fetching customer data:", err)
-			return err
+			return nil, err
 		}
-
-		// Validate customer ID against customers.json
 		var selectedCustomer *CustomerData
 		for _, customer := range customersData {
 			if customer.CustomerId == customerID {
@@ -110,186 +87,98 @@ func (product *ProductSlice) MakeInvoiceWithStockData(format string, invoiceGrou
 				break
 			}
 		}
-
 		if selectedCustomer == nil {
-			return fmt.Errorf("customer with ID %s not found in customers.json", customerID)
+			return nil, fmt.Errorf("customer with ID %s not found in customers.json", customerID)
 		}
 
-		// Load products data for name and price lookup
 		productsData, err := getProductData("Data/products.json")
 		if err != nil {
 			fmt.Println("Error fetching product data:", err)
-			return err
+			return nil, err
 		}
-
-		// Create a map for quick product lookup by ID
-		productMap := make(map[string]ProductData)
+		productMap := make(map[string]ProductStruct)
 		for _, product := range productsData {
-			productMap[product.ProductId] = product
+			productMap[product.ProductID] = product
 		}
-		// Save invoice as a json file - invoices.json
 
-		if format == "table" {
-			fmt.Println("\nFROM: SHIRIKRISHNA TECH\nGST: 1234567890\nCOO: INDIA\nCONTACT: 9725359497\n---")
-			// Print invoice header
-			fmt.Printf("TYPE: Sales Invoice,\nINVOICE: %s,\nNAME: %s,\nADDRESS: %s,\nGST NUMBER: %s,\nDATE: %s\n\n",
-				invoiceID,
-				selectedCustomer.Name,
-				selectedCustomer.Address,
-				selectedCustomer.GstNumber,
-				time.Now().Format("2006-01-02"))
-
-			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-
-			// Print product header
-			fmt.Fprintln(w, "PRODUCT ID\tPRODUCT Name\tPRICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tTOTAL\tAMOUNT")
-			fmt.Fprintln(w, "----------\t------------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t----\t----")
-
-			// Process each product in stockUpdates
-			for productId, colors := range stockUpdates {
-				// Look up product name and price
-				productInfo, exists := productMap[productId]
-				if !exists {
-					return fmt.Errorf("error: Product ID %s not found in products.json", productId)
-				}
-
-				// Process each color for this product
-				for color, quantities := range colors {
-					// Calculate total quantity
-					total := 0
-					for _, qty := range quantities {
-						total += qty
-					}
-
-					// Calculate amount (price × total)
-					// Get price data from proforma
-					price := priceMap[productId]
-					if price == 0 {
-						// Fallback to products.json if no price in proforma
-						price = productInfo.Price
-					}
-					amount := price * float64(total)
-
-					// Get print data from proforma
-					printValue := printMap[productId]
-					if printValue == "" {
-						printValue = "N/A" // fallback if no print data
-					}
-
-					// Format the line with tabs for tabwriter
-					line := fmt.Sprintf("%s\t%s\t%.0f\t%s\t%s",
-						productId,
-						productInfo.Name,
-						price,
-						printValue,
-						color,
-					)
-
-					// Add size quantities
-					for _, qty := range quantities {
-						line += fmt.Sprintf("\t%d", qty)
-					}
-
-					// Add total and amount
-					line += fmt.Sprintf("\t%d\t%.0f", total, amount)
-
-					fmt.Fprintln(w, line)
-				}
+		// Build ProductStruct slice for this invoice
+		var invoiceProducts []ProductStruct
+		var totalAmount int
+		for productId, colors := range stockUpdates {
+			productInfo, exists := productMap[productId]
+			if !exists {
+				return nil, fmt.Errorf("error: Product ID %s not found in products.json", productId)
 			}
-
-			// Flush the tabwriter to display the formatted table
-			w.Flush()
-
-		}
-		if format == "csv" {
-			fmt.Println("\nFROM, SHIRIKRISHNA TECH,\nGST, 1234567890,\nCOO, INDIA\nCONTACT, 9725359497\n")
-			//invoiceTab := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-			// Print invoice header
-			//			fmt.Fprintln(invoiceTab, "\nTYPE,\tINVOICE,\tNAME,\tADDRESS,\tGST NUMBER,\tDATE")
-			//			fmt.Fprintf(invoiceTab, "%s,\t%s,\t%s,\t%s,\t%s,\t%s,\n\n", "Sales Invoice",
-			//				invoiceID,
-			//				selectedCustomer.Name,
-			//				selectedCustomer.Address,
-			//				selectedCustomer.GstNumber,
-			//				time.Now().Format("2006-01-02"))
-			//			invoiceTab.Flush()
-
-			fmt.Printf("TYPE,Sales Invoice,\nINVOICE,%s,\nNAME,%s,\nADDRESS,%s,\nGST NUMBER,%s,\nDATE,%s\n\n",
-				invoiceID,
-				selectedCustomer.Name,
-				selectedCustomer.Address,
-				selectedCustomer.GstNumber,
-				time.Now().Format("2006-01-02"))
-
-			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-
-			// Print product header
-			fmt.Fprintln(w, "PRODUCT ID,\tPRODUCT Name,\tPRICE,\tPRINT,\tCOLOR,\tXS,\tS,\tM,\tL,\tXL,\t2X,\t3X,\t4X,\tTOTAL,\tAMOUNT")
-			//	fmt.Fprintln(w, "----------,\t------------,\t-----,\t-----,\t-----,\t--,\t--,\t--,\t--,\t--,\t--,\t--,\t--,\t----,\t----")
-
-			// Process each product in stockUpdates
-			for productId, colors := range stockUpdates {
-				// Look up product name and price
-				productInfo, exists := productMap[productId]
-				if !exists {
-					return fmt.Errorf("error: Product ID %s not found in products.json", productId)
+			for color, quantities := range colors {
+				quantity := 0
+				for _, qty := range quantities {
+					quantity += qty
 				}
-
-				// Process each color for this product
-				for color, quantities := range colors {
-					// Calculate total quantity
-					total := 0
-					for _, qty := range quantities {
-						total += qty
-					}
-
-					// Calculate amount (price × total)
-					// Get price data from proforma
-					price := priceMap[productId]
-					if price == 0 {
-						// Fallback to products.json if no price in proforma
-						price = productInfo.Price
-					}
-					amount := price * float64(total)
-
-					// Get print data from proforma
-					printValue := printMap[productId]
-					if printValue == "" {
-						printValue = "N/A" // fallback if no print data
-					}
-
-					// Format the line with tabs for tabwriter
-					line := fmt.Sprintf("%s,\t%s,\t%.0f,\t%s,\t%s,",
-						productId,
-						productInfo.Name,
-						price,
-						printValue,
-						color,
-					)
-
-					// Add size quantities
-					for _, qty := range quantities {
-						line += fmt.Sprintf(",%d", qty)
-					}
-
-					// Add total and amount
-					line += fmt.Sprintf(",%d,%.0f", total, amount)
-
-					fmt.Fprintln(w, line)
+				price := priceMap[productId]
+				if price == 0 {
+					price = float64(productInfo.Price)
 				}
+				amount := int(price * float64(quantity))
+				totalAmount += amount
+				// Tax is now calculated on the totalAmount after all products are processed
+				invoiceProducts = append(invoiceProducts, ProductStruct{
+					ProductID: productId,
+					Print:     printMap[productId],
+					Gen:       "MEN",
+					GST:       5, // GST per product not calculated here
+					Color:     map[string][]int{color: quantities},
+					Quantity:  quantity,
+					Total:     totalAmount,
+					Price:     int(price),
+				})
 			}
-
-			// Flush the tabwriter to display the formatted table
-			w.Flush()
-
 		}
+
+		// Calculate total tax on the totalAmount after all products are processed
+		var totalTax int
+		if taxed {
+			totalTax = 5 * totalAmount / 100
+		}
+		invoice := Invoice{
+			Type:      "Sales Invoice",
+			InvoiceID: invoiceID,
+			Customer:  *selectedCustomer,
+			Date:      time.Now().Format("2006-01-02"),
+			IsPaid:    false, // set as needed
+			Product:   invoiceProducts,
+			Amount:    totalAmount,
+			TaxAmount: totalTax,
+		}
+		invoices = append(invoices, invoice)
+		invoicesSlice = append(invoicesSlice, invoice.InvoiceID)
 
 	}
-	return nil
 
+	// Write or append to Data/invoices.json
+	filePath := "Data/invoices.json"
+	var existingInvoices []Invoice
+	if _, err := os.Stat(filePath); err == nil {
+		f, err := os.Open(filePath)
+		if err == nil {
+			defer f.Close()
+			json.NewDecoder(f).Decode(&existingInvoices)
+		}
+	}
+	existingInvoices = append(existingInvoices, invoices...)
+	f, err := os.Create(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	enc := json.NewEncoder(f)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(existingInvoices); err != nil {
+		return nil, err
+	}
+	return invoicesSlice, nil
 }
 
-func getProductData(fileName string) ([]ProductData, error) {
+func getProductData(fileName string) ([]ProductStruct, error) {
 
 	filedata, err := os.Open(fileName)
 	if err != nil {
@@ -297,7 +186,7 @@ func getProductData(fileName string) ([]ProductData, error) {
 	}
 	defer filedata.Close()
 
-	var product []ProductData
+	var product []ProductStruct
 	err = json.NewDecoder(filedata).Decode(&product)
 	if err != nil {
 		return nil, err

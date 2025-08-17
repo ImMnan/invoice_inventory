@@ -54,11 +54,17 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 			color := strings.TrimSpace(row[9])
 			colorMap[color] = quantities
 
-			// Parse total (column 16)
-			total := 0
-			if totalStr := strings.TrimSpace(row[18]); totalStr != "" {
-				if t, err := strconv.Atoi(totalStr); err == nil {
-					total = t
+			// Parse total (column 14)
+			//total := 0
+			//if totalStr := strings.TrimSpace(row[14]); totalStr != "" {
+			//	if t, err := strconv.Atoi(totalStr); err == nil {
+			//		total = t
+			//	}
+			//}
+			quantity := 0
+			if qtyStr := strings.TrimSpace(row[14]); qtyStr != "" {
+				if t, err := strconv.Atoi(qtyStr); err == nil {
+					quantity = t
 				}
 			}
 
@@ -71,9 +77,9 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 				IsPaid:   false, // Default to false for proforma
 				Rejected: false, // Default to false for proforma
 				Product: ProductStruct{
-					UID:   strings.TrimSpace(row[3]), // Product_Id
-					Print: strings.TrimSpace(row[7]), // Print
-					Gen:   strings.TrimSpace(row[8]), // Gen
+					ProductID: strings.TrimSpace(row[3]), // Product_Id
+					Print:     strings.TrimSpace(row[7]), // Print
+					Gen:       strings.TrimSpace(row[8]), // Gen
 					Price: func() int {
 						priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
 						if err != nil {
@@ -81,9 +87,22 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 						}
 						return priceInt
 					}(),
-					GST:   strings.TrimSpace(row[6]), // GST as string
-					Color: colorMap,
-					Total: total,
+					GST: func() int {
+						gstInt, err := strconv.Atoi(strings.TrimSpace(row[6]))
+						if err != nil {
+							return 0
+						}
+						return gstInt
+					}(),
+					Color:    colorMap,
+					Quantity: quantity,
+					Total: func() int {
+						priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
+						if err != nil {
+							return 0
+						}
+						return quantity * priceInt
+					}(),
 				},
 			})
 		} else if row[0] == "purchase-invoice" { // Ensure we only process purchase invoice rows
@@ -104,10 +123,16 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 			color := strings.TrimSpace(row[5])
 			colorMap[color] = quantities
 			// Parse total (column 14)
-			total := 0
-			if totalStr := strings.TrimSpace(row[14]); totalStr != "" {
-				if t, err := strconv.Atoi(totalStr); err == nil {
-					total = t
+			//total := 0
+			//if totalStr := strings.TrimSpace(row[14]); totalStr != "" {
+			//	if t, err := strconv.Atoi(totalStr); err == nil {
+			//		total = t
+			//	}
+			//}
+			quantity := 0
+			if qtyStr := strings.TrimSpace(row[14]); qtyStr != "" {
+				if t, err := strconv.Atoi(qtyStr); err == nil {
+					quantity = t
 				}
 			}
 
@@ -118,10 +143,17 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 				Date:    strings.TrimSpace(row[3]), // Date
 				From:    "vendor",                  // Default vendor since it's not in CSV
 				Product: ProductStruct{
-					UID:   strings.TrimSpace(row[2]), // Product_Id
-					Gen:   strings.TrimSpace(row[4]), // Gen
-					Color: colorMap,
-					Total: total,
+					ProductID: strings.TrimSpace(row[2]), // Product_Id
+					Gen:       strings.TrimSpace(row[4]), // Gen
+					Color:     colorMap,
+					Total: func() int {
+						priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
+						if err != nil {
+							return 0
+						}
+						return quantity * priceInt
+					}(),
+					Quantity: quantity,
 				},
 			})
 		} else {
@@ -179,9 +211,9 @@ func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 				IsPaid:   false, // Default to false for proforma
 				Rejected: false, // Default to false for proforma
 				Product: ProductStruct{
-					UID:   strings.TrimSpace(row[3]), // Product_Id
-					Print: strings.TrimSpace(row[7]), // Print
-					Gen:   strings.TrimSpace(row[8]), // Gen
+					ProductID: strings.TrimSpace(row[3]), // Product_Id
+					Print:     strings.TrimSpace(row[7]), // Print
+					Gen:       strings.TrimSpace(row[8]), // Gen
 					Price: func() int {
 						priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
 						if err != nil {
@@ -189,8 +221,15 @@ func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 						}
 						return priceInt
 					}(),
-					GST:   strings.TrimSpace(row[6]), // GST as string
+					GST: func() int {
+						gstInt, err := strconv.Atoi(strings.TrimSpace(row[6]))
+						if err != nil {
+							return 0
+						}
+						return gstInt
+					}(),
 					Color: colorMap,
+					//	Quantity: quantities,
 					Total: total,
 				},
 			})
@@ -230,10 +269,10 @@ func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 				Date:    strings.TrimSpace(row[3]), // Date
 				From:    strings.TrimSpace(row[2]), // Vendor ID
 				Product: ProductStruct{
-					UID:   strings.TrimSpace(row[2]), // Product_Id
-					Gen:   strings.TrimSpace(row[5]), // Gen
-					Color: colorMap,
-					Total: total,
+					ProductID: strings.TrimSpace(row[2]), // Product_Id
+					Gen:       strings.TrimSpace(row[5]), // Gen
+					Color:     colorMap,
+					Total:     total,
 				},
 			})
 		}
@@ -258,12 +297,12 @@ func (data *JsLocalDB) getExistingStock() ([]In_stockTshirtStruct, map[string]ma
 	// First, collect all existing in_stock data
 	for _, item := range allEntries {
 		if item.Type == "in_stock" {
-			if currentStock[item.Product.UID] == nil {
-				currentStock[item.Product.UID] = make(map[string][]int)
+			if currentStock[item.Product.ProductID] == nil {
+				currentStock[item.Product.ProductID] = make(map[string][]int)
 			}
 			for color, quantities := range item.Product.Color {
-				currentStock[item.Product.UID][color] = make([]int, len(quantities))
-				copy(currentStock[item.Product.UID][color], quantities)
+				currentStock[item.Product.ProductID][color] = make([]int, len(quantities))
+				copy(currentStock[item.Product.ProductID][color], quantities)
 			}
 		}
 	}

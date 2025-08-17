@@ -20,10 +20,11 @@ func (product *ProductSlice) addPurchase() (map[string]map[string][]int, []Purch
 			Invoice: productItem.Invoice,
 			Date:    productItem.Date,
 			Product: ProductStruct{
-				UID:   productItem.Product.UID,
-				Gen:   productItem.Product.Gen,
-				Color: make(map[string][]int),
-				Total: productItem.Product.Total,
+				ProductID: productItem.Product.ProductID,
+				Gen:       productItem.Product.Gen,
+				Color:     make(map[string][]int),
+				Quantity:  productItem.Product.Quantity,
+				Total:     productItem.Product.Total,
 			},
 		}
 		//		purchaseEntries = append(purchaseEntries, purchaseEntry)
@@ -33,23 +34,23 @@ func (product *ProductSlice) addPurchase() (map[string]map[string][]int, []Purch
 
 		purchaseEntries = append(purchaseEntries, purchaseEntry)
 
-		if stockUpdates[productItem.Product.UID] == nil {
-			stockUpdates[productItem.Product.UID] = make(map[string][]int)
+		if stockUpdates[productItem.Product.ProductID] == nil {
+			stockUpdates[productItem.Product.ProductID] = make(map[string][]int)
 		}
 
 		for color, quantities := range productItem.Product.Color {
 			colorKey := strings.ToLower(color)
-			if existing, exists := stockUpdates[productItem.Product.UID][colorKey]; exists {
+			if existing, exists := stockUpdates[productItem.Product.ProductID][colorKey]; exists {
 				for i, qty := range quantities {
 					if i < len(existing) {
-						stockUpdates[productItem.Product.UID][colorKey][i] += qty
+						stockUpdates[productItem.Product.ProductID][colorKey][i] += qty
 					}
 				}
 
 			} else {
 				//initialize with current quantities
-				stockUpdates[productItem.Product.UID][colorKey] = make([]int, len(quantities))
-				copy(stockUpdates[productItem.Product.UID][colorKey], quantities)
+				stockUpdates[productItem.Product.ProductID][colorKey] = make([]int, len(quantities))
+				copy(stockUpdates[productItem.Product.ProductID][colorKey], quantities)
 			}
 
 		}
