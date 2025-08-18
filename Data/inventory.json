@@ -25,11 +25,11 @@
         ],
         "red": [
           0,
-          9,
-          9,
-          9,
-          9,
-          9,
+          10,
+          10,
+          10,
+          10,
+          10,
           0,
           0
         ],
@@ -47,7 +47,7 @@
       "total": 150,
       "price": 200,
       "description": "",
-      "quantity": 145
+      "quantity": 150
     }
   },
   {
@@ -76,11 +76,11 @@
         ],
         "red": [
           0,
-          8,
-          8,
-          8,
-          8,
-          8,
+          9,
+          9,
+          9,
+          9,
+          9,
           0,
           0
         ],
@@ -98,7 +98,7 @@
       "total": 150,
       "price": 200,
       "description": "",
-      "quantity": 130
+      "quantity": 135
     }
   },
   {
@@ -224,6 +224,70 @@
         ]
       },
       "total": 1000,
+      "price": 0,
+      "description": "",
+      "quantity": 5
+    }
+  },
+  {
+    "uuid": "77638e71-bdef-40ef-873f-e88a5574f539",
+    "type": "purchase",
+    "from": "vendor",
+    "invoice": "16",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "product_id": "CO180G-RG",
+      "name": "",
+      "print": "",
+      "gen": "Male",
+      "gst": 0,
+      "color": {
+        "red": [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 0,
+      "price": 0,
+      "description": "",
+      "quantity": 5
+    }
+  },
+  {
+    "uuid": "0434d976-647c-4128-ad52-665120640d5a",
+    "type": "purchase",
+    "from": "vendor",
+    "invoice": "16",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "product_id": "CO240G-RL",
+      "name": "",
+      "print": "",
+      "gen": "Male",
+      "gst": 0,
+      "color": {
+        "red": [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 0,
       "price": 0,
       "description": "",
       "quantity": 5

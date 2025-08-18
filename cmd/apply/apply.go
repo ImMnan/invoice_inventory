@@ -16,7 +16,6 @@ var ApplyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		file, err := cmd.Flags().GetString("file")
 		approve, _ := cmd.Flags().GetBool("approve")
-		taxed, _ := cmd.Flags().GetBool("taxed")
 		csv := false
 		csv, _ = cmd.Flags().GetBool("csv")
 
@@ -26,7 +25,7 @@ var ApplyCmd = &cobra.Command{
 		}
 
 		if file != "" {
-			applyProforma(file, approve, taxed, csv)
+			applyProforma(file, approve, csv)
 
 		} else {
 			cmd.Help()
@@ -38,12 +37,11 @@ func init() {
 	ApplyCmd.Flags().StringP("file", "f", "", "File to apply changes from")
 	ApplyCmd.Flags().Bool("approve", false, "[!] Approve the changes")
 	ApplyCmd.Flags().BoolP("csv", "c", false, "Output in CSV format")
-	ApplyCmd.Flags().BoolP("taxed", "t", false, "Create/Apply TAX invoice")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 
-func applyProforma(fileName string, confirm, taxed, csv bool) {
+func applyProforma(fileName string, confirm, csv bool) {
 	var format string
 	if csv {
 		format = "csv"
