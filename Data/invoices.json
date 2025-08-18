@@ -1,23 +1,30 @@
-[ 
+[
   {
-    "type": "invoice",
+    "type": "Sales Invoice",
     "invoice_id": "12",
-    "for": "SK21-001",
-    "date": "8/3/2025",
+    "customer": {
+      "customer_id": "SK21-001",
+      "name": "RK Tees",
+      "address": "Navsari",
+      "rating": 4,
+      "gst_number": "27AABFRK1234C1Z5",
+      "contact": "9876543210",
+      "email": "rktees@example.com",
+      "origin": 2023
+    },
+    "date": "2025-08-18",
     "isPaid": false,
-    "rejected": false,
-    "total": 1600,
-    "taxType": 1680,
     "product": [
       {
-        "uid": "CO240G-RL",
+        "product_id": "CO180G-RG",
+        "name": "Cotton Regular-fit T-Shirt",
         "print": "Hades",
-        "gen": "Male",
-        "gst": "0",
+        "gen": "",
+        "gst": 5,
         "color": {
-          "black": [
+          "red": [
             0,
-            0,
+            1,
             1,
             1,
             1,
@@ -26,19 +33,21 @@
             0
           ]
         },
-        "total": 4,
+        "total": 1000,
         "price": 200,
-        "amount": 800
-        },
-        { 
-        "uid": "CO240G-RL",
+        "description": "",
+        "quantity": 5
+      },
+      {
+        "product_id": "CO240G-RL",
+        "name": "Cotton Relaxed-fit T-Shirt",
         "print": "Hades",
-        "gen": "Male",
-        "gst": "0",
+        "gen": "",
+        "gst": 5,
         "color": {
-          "black": [
+          "red": [
             0,
-            0,
+            1,
             1,
             1,
             1,
@@ -47,10 +56,13 @@
             0
           ]
         },
-        "total": 4,
-        "price": 200,
-        "amount": 800
-      } 
-    ]
+        "total": 2500,
+        "price": 300,
+        "description": "",
+        "quantity": 5
+      }
+    ],
+    "amount": 2500,
+    "tax_amount": 125
   }
 ]

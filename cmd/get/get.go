@@ -34,12 +34,16 @@ type Stocks struct {
 }
 
 type ProductStruct struct {
-	UID   string           `json:"uid"`
-	Print string           `json:"print"`
-	Gen   string           `json:"gen"`
-	GST   string           `json:"gst"`
-	Color map[string][]int `json:"color"`
-	Total int              `json:"total"`
+	ProductID   string           `json:"product_id"`
+	Name        string           `json:"name"`
+	Print       string           `json:"print"`
+	Gen         string           `json:"gen"`
+	GST         int              `json:"gst"`
+	Color       map[string][]int `json:"color"`
+	Total       int              `json:"total"`
+	Price       int              `json:"price"`
+	Description string           `json:"description"`
+	Quantity    int              `json:"quantity"`
 }
 
 // shouldShowStock determines if a stock should be displayed based on the filter
@@ -55,7 +59,7 @@ func (sf StockFilter) shouldShowStock(stock Stocks) bool {
 
 	// If specific product ID is requested
 	if sf.ProductID != "" && sf.ProductID != "all" {
-		return stock.Product.UID == sf.ProductID
+		return stock.Product.ProductID == sf.ProductID
 	}
 
 	return false
@@ -73,7 +77,7 @@ func (sf StockFilter) shouldShowSales(stock Stocks) bool {
 
 	// If specific product ID is requested
 	if sf.ProductID != "" && sf.ProductID != "all" {
-		return stock.Product.UID == sf.ProductID
+		return stock.Product.ProductID == sf.ProductID
 	}
 
 	return false
@@ -91,7 +95,7 @@ func (sf StockFilter) shouldShowPurchases(stock Stocks) bool {
 
 	// If specific product ID is requested
 	if sf.ProductID != "" && sf.ProductID != "all" {
-		return stock.Product.UID == sf.ProductID
+		return stock.Product.ProductID == sf.ProductID
 	}
 
 	return false
@@ -135,7 +139,7 @@ func calculateTotal(sizes []int) int {
 // printStockRow prints a single row of stock data to the tabwriter
 func printStockRow(tabWriter *tabwriter.Writer, stock Stocks, colorName string, sizes []int, total int) {
 	fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-		stock.Product.UID,
+		stock.Product.ProductID,
 		stock.Invoice,
 		stock.Type,
 		colorName,

@@ -5,30 +5,31 @@
     "invoice": "NA",
     "date": "2025-07-22",
     "isPaid": false,
+    "rejected": false,
     "product": {
       "product_id": "CO240G-RL",
       "name": "Cotton Relaxed-fit T-Shirt",
       "print": "",
       "gen": "men/women/unisex",
-      "gst": "0%",
+      "gst": 5,
       "color": {
         "black": [
           0,
-          2,
-          2,
-          2,
-          2,
-          2,
+          10,
+          10,
+          10,
+          10,
+          10,
           0,
           0
         ],
         "red": [
           0,
-          10,
-          10,
-          10,
-          10,
-          10,
+          9,
+          9,
+          9,
+          9,
+          9,
           0,
           0
         ],
@@ -43,9 +44,10 @@
           0
         ]
       },
-      "quantity": 110,
+      "total": 150,
       "price": 200,
-      "total": 110
+      "description": "",
+      "quantity": 145
     }
   },
   {
@@ -54,30 +56,31 @@
     "invoice": "NA",
     "date": "2025-07-22",
     "isPaid": false,
+    "rejected": false,
     "product": {
       "product_id": "CO180G-RG",
       "name": "Cotton Regular-fit T-Shirt",
       "print": "",
       "gen": "men/women/unisex",
-      "gst": "0%",
+      "gst": 5,
       "color": {
         "black": [
           0,
-          2,
-          2,
-          2,
-          2,
-          2,
+          10,
+          10,
+          10,
+          10,
+          10,
           0,
           0
         ],
         "red": [
           0,
-          10,
-          10,
-          10,
-          10,
-          10,
+          9,
+          9,
+          9,
+          9,
+          9,
           0,
           0
         ],
@@ -92,14 +95,74 @@
           0
         ]
       },
-      "quantity": 110,
+      "total": 150,
       "price": 200,
-      "total": 110
+      "description": "",
+      "quantity": 145
+    }
+  },
+  {
+    "uuid": "a5b9a8b1-5fae-441b-9630-b3bbe78a5878",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "product_id": "CO240G-RL",
+      "name": "",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": 0,
+      "color": {
+        "red": [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 1500,
+      "price": 0,
+      "description": "",
+      "quantity": 5
+    }
+  },
+  {
+    "uuid": "7ae34b3e-5424-4356-a255-ce4eac887d0b",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "product_id": "CO180G-RG",
+      "name": "",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": 0,
+      "color": {
+        "red": [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 1000,
+      "price": 0,
+      "description": "",
+      "quantity": 5
     }
   }
 ]
-
-
-
-
-

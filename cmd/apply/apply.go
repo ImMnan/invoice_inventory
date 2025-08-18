@@ -3,7 +3,7 @@ package apply
 import (
 	"fmt"
 
-	"github.com/immnan/invoice_invoice/get"
+	"github.com/immnan/invoice_invoice/cmd/get"
 	"github.com/immnan/invoice_invoice/pkg"
 	"github.com/spf13/cobra"
 )
@@ -91,7 +91,7 @@ func applyProforma(fileName string, confirm, taxed, csv bool) {
 			return
 		}
 
-		invoiceIDs, err := ProductSlice.ProcessInvoiceWithStockData(taxed, format, invoiceGroupedData)
+		invoiceIDs, err := ProductSlice.ProcessInvoiceWithStockData(format, invoiceGroupedData)
 		if err != nil {
 			fmt.Printf("failed to make invoice with stock data: %v", err)
 			return

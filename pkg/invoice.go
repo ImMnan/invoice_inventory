@@ -3,6 +3,7 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -30,9 +31,36 @@ type CustomerData struct {
 	Origin     int    `json:"origin"`
 }
 
-func (product *ProductSlice) ProcessInvoiceWithStockData(taxed bool, format string, invoiceGroupedData *InvoiceGroupedData) ([]string, error) {
+func Invoices() ([]byte, error) {
+	// open and read json
+	var invoices []Invoice
+	file, err := os.Open("Data/invoices.json")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(data, &invoices)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the entire invoice data as JSON
+	invoiceData, err := json.Marshal(invoices)
+	if err != nil {
+		return nil, err
+	}
+	return invoiceData, nil
+}
+
+func (product *ProductSlice) ProcessInvoiceWithStockData(format string, invoiceGroupedData *InvoiceGroupedData) ([]string, error) {
 	var invoices []Invoice
 	var invoicesSlice []string
+	gst := 5
 	for invoiceID, invoiceItems := range invoiceGroupedData.SalesByInvoice {
 		var customerID string
 		if len(invoiceItems) > 0 {
@@ -123,9 +151,10 @@ func (product *ProductSlice) ProcessInvoiceWithStockData(taxed bool, format stri
 				// Tax is now calculated on the totalAmount after all products are processed
 				invoiceProducts = append(invoiceProducts, ProductStruct{
 					ProductID: productId,
+					Name:      productInfo.Name,
 					Print:     printMap[productId],
-					Gen:       "MEN",
-					GST:       5, // GST per product not calculated here
+					Gen:       productInfo.Gen,
+					GST:       gst, // GST per product not calculated here
 					Color:     map[string][]int{color: quantities},
 					Quantity:  quantity,
 					Total:     totalAmount,
@@ -133,12 +162,8 @@ func (product *ProductSlice) ProcessInvoiceWithStockData(taxed bool, format stri
 				})
 			}
 		}
-
 		// Calculate total tax on the totalAmount after all products are processed
-		var totalTax int
-		if taxed {
-			totalTax = 5 * totalAmount / 100
-		}
+		totalTax := 5 * totalAmount / 100
 		invoice := Invoice{
 			Type:      "Sales Invoice",
 			InvoiceID: invoiceID,

@@ -62,7 +62,7 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 			//	}
 			//}
 			quantity := 0
-			if qtyStr := strings.TrimSpace(row[14]); qtyStr != "" {
+			if qtyStr := strings.TrimSpace(row[18]); qtyStr != "" {
 				if t, err := strconv.Atoi(qtyStr); err == nil {
 					quantity = t
 				}
