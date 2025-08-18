@@ -64,5 +64,71 @@
     ],
     "amount": 2500,
     "tax_amount": 125
+  },
+  {
+    "type": "Sales Invoice",
+    "invoice_id": "12",
+    "customer": {
+      "customer_id": "SK21-001",
+      "name": "RK Tees",
+      "address": "Navsari",
+      "rating": 4,
+      "gst_number": "27AABFRK1234C1Z5",
+      "contact": "9876543210",
+      "email": "rktees@example.com",
+      "origin": 2023
+    },
+    "date": "2025-08-18",
+    "isPaid": false,
+    "product": [
+      {
+        "product_id": "CO180G-RG",
+        "name": "Cotton Regular-fit T-Shirt",
+        "print": "Hades",
+        "gen": "",
+        "gst": 5,
+        "color": {
+          "red": [
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0
+          ]
+        },
+        "total": 1000,
+        "price": 200,
+        "description": "",
+        "quantity": 5
+      },
+      {
+        "product_id": "CO180G-RG",
+        "name": "Cotton Regular-fit T-Shirt",
+        "print": "Hades",
+        "gen": "",
+        "gst": 5,
+        "color": {
+          "black": [
+            0,
+            2,
+            2,
+            2,
+            2,
+            2,
+            0,
+            0
+          ]
+        },
+        "total": 3000,
+        "price": 200,
+        "description": "",
+        "quantity": 10
+      }
+    ],
+    "amount": 3000,
+    "tax_amount": 150
   }
 ]

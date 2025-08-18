@@ -121,6 +121,8 @@ func PrintInvoice(format string, invoiceID []string) error {
 					fmt.Fprintln(w, "PRODUCT Name\tPRICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY\tTOTAL")
 					fmt.Fprintln(w, "------------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
 					var total int
+					var qtyTotal int
+					var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
 					for _, p := range invoice.Product {
 						for color, quantities := range p.Color {
 							line := fmt.Sprintf("%s\t%d\t%s\t%s",
@@ -129,17 +131,33 @@ func PrintInvoice(format string, invoiceID []string) error {
 								p.Print,
 								color,
 							)
-							for _, q := range quantities {
+							// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
+							// If not, pad with zeros
+							padded := make([]int, 8)
+							copy(padded, quantities)
+							xsTotal += padded[0]
+							sTotal += padded[1]
+							mTotal += padded[2]
+							lTotal += padded[3]
+							xlTotal += padded[4]
+							x2Total += padded[5]
+							x3Total += padded[6]
+							x4Total += padded[7]
+							for _, q := range padded {
 								line += fmt.Sprintf("\t%d", q)
 							}
 							line += fmt.Sprintf("\t%d\t%d", p.Quantity, p.Total)
 							fmt.Fprintln(w, line)
 							total += p.Total
+							qtyTotal += p.Quantity
 						}
 					}
+					fmt.Fprintln(w, "------------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
+					fmt.Fprintf(w, "FINAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal, total)
+
 					w.Flush()
 					finalAmount := total + invoice.TaxAmount
-					fmt.Printf("\nTOTAL: %d\ncGST:  %s\niGST:  %s\nTAX:   %d\nTAX INVOICE AMOUNT: %d", total, "2.5%", "2.5%", invoice.TaxAmount, finalAmount)
+					fmt.Printf("\ncGST:  %s\nsGST:  %s\nTAX:   %d INR\nTAX INVOICE AMOUNT: %d INR\n", "2.5%", "2.5%", invoice.TaxAmount, finalAmount)
 
 				case "csv":
 					fmt.Println("\nFROM, SHIRIKRISHNA TECH,\nGST, 1234567890,\nCOO, INDIA\nCONTACT, 9725359497")
@@ -171,7 +189,7 @@ func PrintInvoice(format string, invoiceID []string) error {
 							line += fmt.Sprintf("\t%d\t%d", qty, total)
 							fmt.Fprintln(w, line)
 							taxAmmount := total * 5 / 100
-							fmt.Printf("\nTOTAL, %d\ncGST, %s\niGST, %s\nTAX, %d\nTAX INVOICE AMOUNT, %d\n", total, "2.5%", "2.5%", taxAmmount, invoice.TaxAmount)
+							fmt.Printf("\nTOTAL, %d\ncGST, %s\nsGST, %s\nTAX, %d INR\nTAX INVOICE AMOUNT, %d INR\n", total, "2.5%", "2.5%", taxAmmount, invoice.TaxAmount)
 						}
 					}
 					w.Flush()
