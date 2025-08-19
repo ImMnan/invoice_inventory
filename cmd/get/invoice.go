@@ -178,8 +178,8 @@ func PrintInvoice(format string, invoiceID []string, month int) error {
 					finalAmount := total + invoice.TaxAmount
 					fmt.Printf("\ncGST:  %s\nsGST:  %s\nTAX:   %d INR\nTAX INVOICE AMOUNT: %d INR\n", "2.5%", "2.5%", invoice.TaxAmount, finalAmount)
 
-					fmt.Println("\n[*] This is a computer generated invoice, please report any discrepancies to sales team.")
-					fmt.Println("\n[i] No physical signature is required.")
+					fmt.Println("\n[!] This is a computer generated invoice, please report any discrepancies to sales team.")
+					fmt.Println("\n[*] No physical signature is required.")
 
 					fmt.Println("\n\n\n'lvs' Copyright (C) 2025  SHRIKRISHNA TECH")
 

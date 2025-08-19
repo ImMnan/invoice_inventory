@@ -4,6 +4,7 @@ Copyright © 2025 github.com/immnan
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/immnan/invoice_invoice/cmd/apply"
@@ -19,10 +20,16 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		help := cmd.Flag("help")
-		if help != nil && help.Value.String() == "true" {
-			// Show help information
+		help, _ := cmd.Flags().GetBool("help")
+		license, _ := cmd.Flags().GetBool("license")
+		version, _ := cmd.Flags().GetBool("version")
+		switch {
+		case help:
 			cmd.Help()
+		case license:
+			printLicense()
+		case version:
+			versionInfo()
 		}
 	},
 }
@@ -39,6 +46,7 @@ func Execute() {
 func addSubCommand() {
 	rootCmd.AddCommand(get.GetCmd)
 	rootCmd.AddCommand(apply.ApplyCmd)
+
 }
 
 func init() {
@@ -51,5 +59,48 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("help", "h", false, "Help message for toggle")
+	rootCmd.Flags().BoolP("license", "l", false, "Show license information")
+	rootCmd.Flags().BoolP("version", "v", false, "Show version information")
 	addSubCommand()
+}
+
+func printLicense() {
+	fmt.Println("\n---")
+
+	fmt.Println(
+
+		`    This is lvs, a tool to manage inventory, sales, purchases and invoices
+    at Shrikrishna Tech
+
+    Copyright (C) 2025  SHRIKRISHNA TECH
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.`)
+
+	fmt.Println(`    'lvs'  Copyright (C) 2025  SHRIKRISHNA TECH
+    This program comes with ABSOLUTELY NO WARRANTY; for details type.
+    This is free software, and you are welcome to redistribute it
+    under certain conditions; type "lvs --license" for details.`)
+
+	fmt.Println("\n---")
+}
+
+func versionInfo() {
+	fmt.Printf("\n     version: %s\n", "0.1.0_alpha\n")
+	fmt.Println(`    'lvs'  Copyright (C) 2025  SHRIKRISHNA TECH
+    This program comes with ABSOLUTELY NO WARRANTY; for details type.
+    This is free software, and you are welcome to redistribute it
+    under certain conditions; type "lvs --license" for details.`)
+
+	fmt.Println("\n---")
 }
