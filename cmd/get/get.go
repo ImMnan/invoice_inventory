@@ -156,7 +156,7 @@ func printStockRow(tabWriter *tabwriter.Writer, stock Stocks, colorName string, 
 		total)
 }
 
-func ConfigData() (inventoryDB, customerDB, invoiceDB, productDB string, logErr error) {
+func ConfigData(month int) (inventoryDB, customerDB, invoiceDB, productDB string, logErr error) {
 
 	vp := viper.New()
 	vp.SetConfigName("lvsConfig")
@@ -167,10 +167,17 @@ func ConfigData() (inventoryDB, customerDB, invoiceDB, productDB string, logErr 
 	if err != nil {
 		return "", "", "", "", err
 	}
-	inventoryData := vp.GetString("data.inventoryData")
-	customerData := vp.GetString("data.customersData")
-	invoiceData := vp.GetString("data.invoicesData")
-	productData := vp.GetString("data.productsData")
+	var inventoryData, customerData, invoiceData, productData string
+	monthSuffixes := []string{"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+	suffix := monthSuffixes[month]
+	prefix := "data"
+	if suffix != "" {
+		prefix += suffix
+	}
+	inventoryData = vp.GetString(prefix + ".inventoryData")
+	customerData = vp.GetString(prefix + ".customersData")
+	invoiceData = vp.GetString(prefix + ".invoicesData")
+	productData = vp.GetString(prefix + ".productsData")
 
 	return inventoryData, customerData, invoiceData, productData, nil
 }

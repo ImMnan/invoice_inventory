@@ -32,20 +32,20 @@ type CustomerData struct {
 	Origin     int    `json:"origin"`
 }
 
-func Invoices() ([]byte, error) {
+func (data *JsLocalDB) Invoices() ([]byte, error) {
 	// open and read json
 	var invoices []Invoice
-	file, err := os.Open("Data/invoices.json")
+	file, err := os.Open(data.InvoiceFile)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	data, err := io.ReadAll(file)
+	fileData, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(data, &invoices)
+	err = json.Unmarshal(fileData, &invoices)
 	if err != nil {
 		return nil, err
 	}

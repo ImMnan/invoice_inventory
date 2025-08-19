@@ -19,6 +19,7 @@ var saleCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1), // Allows 0 or 1 argument
 	Run: func(cmd *cobra.Command, args []string) {
 		var productID string
+		month, _ := cmd.Flags().GetInt("month")
 		if len(args) == 0 {
 			productID = "all" // Default to "all" if no argument provided
 		} else {
@@ -27,7 +28,7 @@ var saleCmd = &cobra.Command{
 		colorFlag, _ := cmd.Flags().GetString("color")
 		printedFlag, _ := cmd.Flags().GetBool("printed")
 
-		printSales(productID, colorFlag, printedFlag)
+		printSales(productID, colorFlag, printedFlag, month)
 	},
 }
 
@@ -38,6 +39,7 @@ func init() {
 	saleCmd.Flags().BoolP("printed", "p", false, "Show printed sale values")
 	//	saleCmd.Flags().BoolP("rejected", "r", false, "Show rejected sale values")
 	saleCmd.Flags().StringP("color", "c", "", "Show sale values for specific color only (e.g., red, green, blue)")
+	saleCmd.Flags().IntP("month", "m", 0, "Month to fetch sales for (default is current month)")
 }
 
 type SaleFilter struct {
@@ -47,8 +49,16 @@ type SaleFilter struct {
 	Printed   bool
 }
 
-func printSales(productID, colorFlag string, printedFlag bool) {
-	data, err := pkg.Stocks()
+func printSales(productID, colorFlag string, printedFlag bool, month int) {
+
+	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month) // Assuming 0 for current month
+	if err != nil {
+		fmt.Println("Error fetching config data:", err)
+		return
+	}
+
+	existData := &pkg.JsLocalDB{InventoryFile: inventoryDB, CustomerFile: customerDB, InvoiceFile: invoiceDB, ProductFile: productDB}
+	data, err := existData.Stocks()
 	if err != nil {
 		fmt.Println("Error fetching stock data:", err)
 		return

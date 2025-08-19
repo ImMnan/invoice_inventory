@@ -18,6 +18,7 @@ var purchaseCmd = &cobra.Command{
 	Long:    `Fetches purchase information for the given product ID. If no product_id is provided, shows all purchases.`,
 	Args:    cobra.MaximumNArgs(1), // Allows 0 or 1 argument
 	Run: func(cmd *cobra.Command, args []string) {
+		month, _ := cmd.Flags().GetInt("month")
 		var productID string
 		if len(args) == 0 {
 			productID = "all" // Default to "all" if no argument provided
@@ -27,7 +28,7 @@ var purchaseCmd = &cobra.Command{
 		colorFlag, _ := cmd.Flags().GetString("color")
 		printedFlag, _ := cmd.Flags().GetBool("printed")
 
-		printPurchases(productID, colorFlag, printedFlag)
+		printPurchases(productID, colorFlag, printedFlag, month)
 	},
 }
 
@@ -38,6 +39,7 @@ func init() {
 	purchaseCmd.Flags().BoolP("printed", "p", false, "Show printed purchase values")
 	//	purchaseCmd.Flags().BoolP("rejected", "r", false, "Show rejected purchase values")
 	purchaseCmd.Flags().StringP("color", "c", "", "Show purchase values for specific color only (e.g., red, green, blue)")
+	purchaseCmd.Flags().IntP("month", "m", 0, "Month to fetch purchases for (default is current month)")
 }
 
 type PurchaseFilter struct {
@@ -47,8 +49,16 @@ type PurchaseFilter struct {
 	Printed   bool
 }
 
-func printPurchases(productID, colorFlag string, printedFlag bool) {
-	data, err := pkg.Stocks()
+func printPurchases(productID, colorFlag string, printedFlag bool, month int) {
+
+	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month)
+	if err != nil {
+		fmt.Println("Error fetching config data:", err)
+		return
+	}
+
+	existData := &pkg.JsLocalDB{InventoryFile: inventoryDB, CustomerFile: customerDB, InvoiceFile: invoiceDB, ProductFile: productDB}
+	data, err := existData.Stocks()
 	if err != nil {
 		fmt.Println("Error fetching stock data:", err)
 		return

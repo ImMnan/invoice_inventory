@@ -1,0 +1,104 @@
+[
+  {
+    "uuid": "1004",
+    "type": "in_stock",
+    "invoice": "NA",
+    "date": "2025-07-22",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "product_id": "CO240G-RL",
+      "name": "Cotton Relaxed-fit T-Shirt",
+      "print": "",
+      "gen": "men/women/unisex",
+      "gst": 5,
+      "color": {
+        "black": [
+          0,
+          1,
+          1,
+          1,
+          0,
+          10,
+          0,
+          0
+        ],
+        "red": [
+          0,
+          10,
+          10,
+          10,
+          10,
+          10,
+          0,
+          0
+        ],
+        "white": [
+          0,
+          10,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "total": 150,
+      "price": 200,
+      "description": "",
+      "quantity": 150
+    }
+  },
+  {
+    "uuid": "1008",
+    "type": "in_stock",
+    "invoice": "NA",
+    "date": "2025-07-22",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "product_id": "CO180G-RG",
+      "name": "Cotton Regular-fit T-Shirt",
+      "print": "",
+      "gen": "men/women/unisex",
+      "gst": 5,
+      "color": {
+        "black": [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ],
+        "red": [
+          0,
+          9,
+          9,
+          9,
+          9,
+          9,
+          0,
+          0
+        ],
+        "white": [
+          0,
+          10,
+          1,
+          1,
+          1,
+          10,
+          0,
+          0
+        ]
+      },
+      "total": 150,
+      "price": 200,
+      "description": "",
+      "quantity": 135
+    }
+  }
+]

@@ -22,9 +22,10 @@ var invoiceCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		invoices := []string{}
 		format, _ := cmd.Flags().GetString("csv")
+		month, _ := cmd.Flags().GetInt("month")
 		if len(args) == 0 {
 			// Show all invoices if no argument is provided
-			getInvoices(format)
+			getInvoices(format, month)
 			return
 		}
 		for _, id := range args {
@@ -38,7 +39,7 @@ var invoiceCmd = &cobra.Command{
 			return
 		}
 		// Print invoices for the given IDs
-		err := PrintInvoice(format, invoices)
+		err := PrintInvoice(format, invoices, month)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 		}
@@ -48,11 +49,24 @@ var invoiceCmd = &cobra.Command{
 func init() {
 	GetCmd.AddCommand(invoiceCmd)
 	invoiceCmd.Flags().String("csv", "table", "Output format (table or csv)")
+	invoiceCmd.Flags().IntP("month", "m", 0, "Month to fetch invoices for (default is current month)")
 }
 
-func getInvoices(format string) {
+func getInvoices(format string, month int) {
 
-	data, err := pkg.Invoices()
+	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month)
+	if err != nil {
+		fmt.Println("Error fetching config data:", err)
+		return
+	}
+	existData := &pkg.JsLocalDB{
+		InventoryFile: inventoryDB,
+		CustomerFile:  customerDB,
+		InvoiceFile:   invoiceDB,
+		ProductFile:   productDB,
+	}
+
+	data, err := existData.Invoices()
 	if err != nil {
 		fmt.Println("Error fetching invoice data:", err)
 		return
@@ -86,11 +100,11 @@ func getInvoices(format string) {
 }
 
 // printInvoice prints the invoice in table or csv format
-func PrintInvoice(format string, invoiceID []string) error {
+func PrintInvoice(format string, invoiceID []string, month int) error {
 
 	var invoices []pkg.Invoice
 
-	invoiceDB, _, _, _, err := ConfigData()
+	_, _, invoiceDB, _, err := ConfigData(month)
 	if err != nil {
 		return err
 	}

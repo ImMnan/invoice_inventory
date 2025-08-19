@@ -64,7 +64,7 @@ func applyProforma(fileName string, confirm, csv bool) {
 		fmt.Printf("failed to make stock update: %v", err)
 		return
 	}
-	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData()
+	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(0)
 	if err != nil {
 		fmt.Printf("failed to read config data: %v", err)
 		return
@@ -100,7 +100,7 @@ func applyProforma(fileName string, confirm, csv bool) {
 			return
 		}
 
-		if err := get.PrintInvoice(format, invoiceIDs); err != nil {
+		if err := get.PrintInvoice(format, invoiceIDs, 0); err != nil {
 			fmt.Printf("failed to print invoice: %v", err)
 		}
 	} else {

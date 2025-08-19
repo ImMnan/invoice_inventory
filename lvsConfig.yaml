@@ -1,7 +1,12 @@
 
 data: 
-  customersData: /Data/customers.json
-  invoicesData: /Data/invoices.json
-  productsData: /Data/products.json
-  inventoryData: /Data/inventory.json
+  customersData: Data/customers.json
+  invoicesData: Data/invoices.json
+  productsData: Data/products.json
+  inventoryData: Data/inventory.json
 
+dataJul:
+  customersData: Data/customers_july.json
+  invoicesData: Data/invoices_july.json
+  productsData: Data/products_july.json
+  inventoryData: Data/inventory_july.json

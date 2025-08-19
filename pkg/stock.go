@@ -8,20 +8,20 @@ import (
 	"strings"
 )
 
-func Stocks() ([]byte, error) {
+func (data *JsLocalDB) Stocks() ([]byte, error) {
 	// open and read json
 	var stock []TshirtStruct
-	file, err := os.Open("Data/inventory.json")
+	file, err := os.Open(data.InventoryFile)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	data, err := io.ReadAll(file)
+	fileData, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(data, &stock)
+	err = json.Unmarshal(fileData, &stock)
 	if err != nil {
 		return nil, err
 	}

@@ -18,16 +18,17 @@ var stockCmd = &cobra.Command{
 	Long:    `Fetches stock information for the given product ID. If no product_id is provided, shows all stocks.`,
 	Args:    cobra.MaximumNArgs(1), // Allows 0 or 1 argument
 	Run: func(cmd *cobra.Command, args []string) {
+		month, _ := cmd.Flags().GetInt("month")
+		colorFlag, _ := cmd.Flags().GetString("color")
+		printedFlag, _ := cmd.Flags().GetBool("printed")
 		var productID string
+
 		if len(args) == 0 {
 			productID = "all" // Default to "all" if no argument provided
 		} else {
 			productID = args[0]
 		}
-		colorFlag, _ := cmd.Flags().GetString("color")
-		printedFlag, _ := cmd.Flags().GetBool("printed")
-
-		printStocks(productID, colorFlag, printedFlag)
+		printStocks(productID, colorFlag, printedFlag, month)
 	},
 }
 
@@ -38,6 +39,7 @@ func init() {
 	stockCmd.Flags().BoolP("printed", "p", false, "Show printed stock values")
 	//	stockCmd.Flags().BoolP("rejected", "r", false, "Show rejected stock values")
 	stockCmd.Flags().StringP("color", "c", "", "Show stock values for specific color only (e.g., red, green, blue)")
+	stockCmd.Flags().IntP("month", "m", 0, "Month to fetch stocks for (default is current month)")
 }
 
 // StockFilter defines the filtering criteria for stocks
@@ -48,8 +50,16 @@ type StockFilter struct {
 	Printed   bool
 }
 
-func printStocks(productID, colorFlag string, printedFlag bool) {
-	data, err := pkg.Stocks()
+func printStocks(productID, colorFlag string, printedFlag bool, month int) {
+
+	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month) // Assuming 0 for current month
+	if err != nil {
+		fmt.Println("Error fetching config data:", err)
+		return
+	}
+
+	existData := &pkg.JsLocalDB{InventoryFile: inventoryDB, CustomerFile: customerDB, InvoiceFile: invoiceDB, ProductFile: productDB}
+	data, err := existData.Stocks()
 	if err != nil {
 		fmt.Println("Error fetching stock data:", err)
 		return
