@@ -66,21 +66,21 @@
       "color": {
         "black": [
           0,
-          8,
-          8,
-          8,
-          8,
-          8,
+          6,
+          6,
+          6,
+          6,
+          6,
           0,
           0
         ],
         "red": [
           0,
-          9,
-          9,
-          9,
-          9,
-          9,
+          8,
+          8,
+          8,
+          8,
+          8,
           0,
           0
         ],
@@ -98,7 +98,7 @@
       "total": 150,
       "price": 200,
       "description": "",
-      "quantity": 135
+      "quantity": 120
     }
   },
   {
@@ -288,6 +288,70 @@
         ]
       },
       "total": 0,
+      "price": 0,
+      "description": "",
+      "quantity": 5
+    }
+  },
+  {
+    "uuid": "1dba80e0-6953-4c04-b603-679075b3e1ad",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "product_id": "CO180G-RG",
+      "name": "",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": 0,
+      "color": {
+        "black": [
+          0,
+          2,
+          2,
+          2,
+          2,
+          2,
+          0,
+          0
+        ]
+      },
+      "total": 3000,
+      "price": 0,
+      "description": "",
+      "quantity": 10
+    }
+  },
+  {
+    "uuid": "394021ae-4c87-4f84-bf5f-532882158d23",
+    "type": "sale",
+    "for": "SK21-001",
+    "invoice": "12",
+    "date": "8/3/2025",
+    "isPaid": false,
+    "rejected": false,
+    "product": {
+      "product_id": "CO180G-RG",
+      "name": "",
+      "print": "Hades",
+      "gen": "Male",
+      "gst": 0,
+      "color": {
+        "red": [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "total": 1000,
       "price": 0,
       "description": "",
       "quantity": 5

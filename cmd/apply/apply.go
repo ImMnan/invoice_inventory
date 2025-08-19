@@ -2,6 +2,8 @@ package apply
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/immnan/invoice_invoice/cmd/get"
 	"github.com/immnan/invoice_invoice/pkg"
@@ -74,14 +76,62 @@ func applyProforma(fileName string, confirm, csv bool) {
 	if !confirm {
 		switch {
 		case stockUpdate.SaleEntries != nil:
-			fmt.Println("Proforma stock updates found, processing...")
-			for _, entry := range stockUpdate.SaleEntries {
-				fmt.Printf("%v\n", entry)
+			fmt.Println("\n[!] Check the data correctly before processing the invoice")
+
+			saleLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+			fmt.Fprintln(saleLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY\tTOTAL")
+			fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
+			// Group SaleEntries by Invoice ID
+			invoiceGroups := make(map[string][]pkg.Proforma)
+			for _, item := range stockUpdate.SaleEntries {
+				invoiceGroups[item.Invoice] = append(invoiceGroups[item.Invoice], item)
 			}
+
+			for invoiceId, items := range invoiceGroups {
+				var total int
+				var qtyTotal int
+				var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
+				for _, item := range items {
+					p := item.Product
+					for color, quantities := range p.Color {
+						line := fmt.Sprintf("%s\t%s\t%s\t%s",
+							p.ProductID,
+							invoiceId,
+							p.Print,
+							color,
+						)
+						// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
+						padded := make([]int, 8)
+						copy(padded, quantities)
+						xsTotal += padded[0]
+						sTotal += padded[1]
+						mTotal += padded[2]
+						lTotal += padded[3]
+						xlTotal += padded[4]
+						x2Total += padded[5]
+						x3Total += padded[6]
+						x4Total += padded[7]
+						for _, q := range padded {
+							line += fmt.Sprintf("\t%d", q)
+						}
+						line += fmt.Sprintf("\t%d\t%d", p.Quantity, p.Total)
+						fmt.Fprintln(saleLint, line)
+						total += p.Total
+						qtyTotal += p.Quantity
+					}
+				}
+				fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
+				fmt.Fprintf(saleLint, "FINAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal, total)
+			}
+			saleLint.Flush()
+			fmt.Println("\n[*] The above invoice does not include TAX, the final invoice may look different.")
+			fmt.Println("\n\n\n'lvs' Copyright (C) 2025  SHRIKRISHNA TECH")
+
 		case stockUpdate.PurchaseEntries != nil:
 			fmt.Println("Purchase stock updates found, processing...")
 			for _, entry := range stockUpdate.PurchaseEntries {
 				fmt.Printf("%v\n", entry)
+
 			}
 		default:
 			fmt.Println("No stock updates found, nothing to apply.")
@@ -106,4 +156,5 @@ func applyProforma(fileName string, confirm, csv bool) {
 	} else {
 		fmt.Println("Changes not applied. Use --approve to confirm.")
 	}
+
 }
