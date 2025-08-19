@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	//"github.com/immnan/invoice_invoice/cmd/apply"
 )
 
 type Invoice struct {
@@ -57,7 +58,7 @@ func Invoices() ([]byte, error) {
 	return invoiceData, nil
 }
 
-func (product *ProductSlice) ProcessInvoiceWithStockData(format string, invoiceGroupedData *InvoiceGroupedData) ([]string, error) {
+func (data *JsLocalDB) ProcessInvoiceWithStockData(format string, invoiceGroupedData *InvoiceGroupedData, product *ProductSlice) ([]string, error) {
 	var invoices []Invoice
 	var invoicesSlice []string
 	gst := 5
@@ -103,7 +104,7 @@ func (product *ProductSlice) ProcessInvoiceWithStockData(format string, invoiceG
 			priceMap[item.Product.ProductID] = float64(item.Product.Price)
 		}
 
-		customersData, err := getCustomerData("Data/customers.json")
+		customersData, err := data.getCustomerData()
 		if err != nil {
 			fmt.Println("Error fetching customer data:", err)
 			return nil, err
@@ -119,7 +120,7 @@ func (product *ProductSlice) ProcessInvoiceWithStockData(format string, invoiceG
 			return nil, fmt.Errorf("customer with ID %s not found in customers.json", customerID)
 		}
 
-		productsData, err := getProductData("Data/products.json")
+		productsData, err := data.getProductData()
 		if err != nil {
 			fmt.Println("Error fetching product data:", err)
 			return nil, err
@@ -203,9 +204,11 @@ func (product *ProductSlice) ProcessInvoiceWithStockData(format string, invoiceG
 	return invoicesSlice, nil
 }
 
-func getProductData(fileName string) ([]ProductStruct, error) {
+func (data *JsLocalDB) getProductData() ([]ProductStruct, error) {
 
-	filedata, err := os.Open(fileName)
+	productDB := data.ProductFile
+
+	filedata, err := os.Open(productDB)
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +222,10 @@ func getProductData(fileName string) ([]ProductStruct, error) {
 	return product, nil
 }
 
-func getCustomerData(fileName string) ([]CustomerData, error) {
-	filedata, err := os.Open(fileName)
+func (data *JsLocalDB) getCustomerData() ([]CustomerData, error) {
+
+	customerDB := data.CustomerFile
+	filedata, err := os.Open(customerDB)
 	if err != nil {
 		return nil, err
 	}

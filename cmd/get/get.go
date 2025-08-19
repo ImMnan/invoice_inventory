@@ -5,6 +5,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // getCmd represents the get command
@@ -153,4 +154,23 @@ func printStockRow(tabWriter *tabwriter.Writer, stock Stocks, colorName string, 
 		sizes[6], // 3XL
 		sizes[7], // 4XL
 		total)
+}
+
+func ConfigData() (inventoryDB, customerDB, invoiceDB, productDB string, logErr error) {
+
+	vp := viper.New()
+	vp.SetConfigName("lvsConfig")
+	vp.SetConfigType("yaml")
+	//	vp.AddConfigPath(".")
+	vp.AddConfigPath(".")
+	err := vp.ReadInConfig()
+	if err != nil {
+		return "", "", "", "", err
+	}
+	inventoryData := vp.GetString("data.inventoryData")
+	customerData := vp.GetString("data.customersData")
+	invoiceData := vp.GetString("data.invoicesData")
+	productData := vp.GetString("data.productsData")
+
+	return inventoryData, customerData, invoiceData, productData, nil
 }

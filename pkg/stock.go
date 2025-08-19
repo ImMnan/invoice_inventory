@@ -259,7 +259,7 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 		return nil, fmt.Errorf("failed to marshal updated inventory: %w", err)
 	}
 
-	if err := os.WriteFile(data.File, updatedData, 0644); err != nil {
+	if err := os.WriteFile(data.InventoryFile, updatedData, 0644); err != nil {
 		return nil, fmt.Errorf("failed to write updated inventory: %w", err)
 	}
 

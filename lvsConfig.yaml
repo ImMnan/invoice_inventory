@@ -1,0 +1,7 @@
+
+data: 
+  customersData: /Data/customers.json
+  invoicesData: /Data/invoices.json
+  productsData: /Data/products.json
+  inventoryData: /Data/inventory.json
+

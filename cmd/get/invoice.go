@@ -3,6 +3,7 @@ package get
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -60,15 +61,11 @@ func getInvoices(format string) {
 	var invoices []pkg.Invoice
 
 	json.Unmarshal(data, &invoices)
-	if err != nil {
-		fmt.Println("Error unmarshalling invoice data:", err)
-		return
-	}
+
 	if format == "table" {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(invWr, "INVOICE\tFOR\tTYPE\tAMOUNT\tDATE\tIS PAID")
 		for _, invoice := range invoices {
-			//	ammount := stock.Product.Total * stock.Product.Price
 			if invoice.InvoiceID != "" || invoice.Type != "NA" {
 				fmt.Fprintf(invWr, "%s\t%s\t%s\t%d\t%s\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, invoice.Amount, invoice.Date, invoice.IsPaid)
 			}
@@ -79,7 +76,6 @@ func getInvoices(format string) {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(invWr, "INVOICE,\tFOR,\tTYPE,\tAMOUNT,\tDATE,\tIS PAID")
 		for _, invoice := range invoices {
-			//	ammount := stock.Product.Total * stock.Product.Price
 			if invoice.InvoiceID != "" || invoice.Type != "NA" {
 				fmt.Fprintf(invWr, "%s,\t%s,\t%s,\t%d,\t%s,\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, invoice.Amount, invoice.Date, invoice.IsPaid)
 			}
@@ -94,11 +90,20 @@ func PrintInvoice(format string, invoiceID []string) error {
 
 	var invoices []pkg.Invoice
 
-	invoiceFile, err := os.ReadFile("Data/invoices.json")
+	invoiceDB, _, _, _, err := ConfigData()
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal(invoiceFile, &invoices); err != nil {
+	invoiceData, err := os.Open(invoiceDB)
+	if err != nil {
+		return err
+	}
+	data, err := io.ReadAll(invoiceData)
+	if err != nil {
+		return err
+	}
+	defer invoiceData.Close()
+	if err := json.Unmarshal(data, &invoices); err != nil {
 		return err
 	}
 

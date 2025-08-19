@@ -64,7 +64,12 @@ func applyProforma(fileName string, confirm, csv bool) {
 		fmt.Printf("failed to make stock update: %v", err)
 		return
 	}
-	existData := &pkg.JsLocalDB{File: "Data/inventory.json"}
+	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData()
+	if err != nil {
+		fmt.Printf("failed to read config data: %v", err)
+		return
+	}
+	existData := &pkg.JsLocalDB{InventoryFile: inventoryDB, CustomerFile: customerDB, InvoiceFile: invoiceDB, ProductFile: productDB}
 
 	if !confirm {
 		switch {
@@ -89,7 +94,7 @@ func applyProforma(fileName string, confirm, csv bool) {
 			return
 		}
 
-		invoiceIDs, err := ProductSlice.ProcessInvoiceWithStockData(format, invoiceGroupedData)
+		invoiceIDs, err := existData.ProcessInvoiceWithStockData(format, invoiceGroupedData, &ProductSlice)
 		if err != nil {
 			fmt.Printf("failed to make invoice with stock data: %v", err)
 			return

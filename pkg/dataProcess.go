@@ -282,7 +282,7 @@ func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 }
 
 func (data *JsLocalDB) getExistingStock() ([]In_stockTshirtStruct, map[string]map[string][]int, error) {
-	inventoryDB, err := os.Open(data.File)
+	inventoryDB, err := os.Open(data.InventoryFile)
 	if err != nil {
 		return []In_stockTshirtStruct{}, nil, err
 	}

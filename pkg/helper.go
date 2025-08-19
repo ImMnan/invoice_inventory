@@ -55,7 +55,10 @@ type ManualData struct {
 }
 
 type JsLocalDB struct {
-	File string
+	InventoryFile string
+	CustomerFile  string
+	InvoiceFile   string
+	ProductFile   string
 }
 type StockData interface {
 	existingStock() (map[string]map[string][]int, error)
