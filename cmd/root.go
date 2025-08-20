@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/immnan/invoice_invoice/cmd/apply"
+	"github.com/immnan/invoice_invoice/cmd/delete"
 	"github.com/immnan/invoice_invoice/cmd/get"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +47,7 @@ func Execute() {
 func addSubCommand() {
 	rootCmd.AddCommand(get.GetCmd)
 	rootCmd.AddCommand(apply.ApplyCmd)
-
+	rootCmd.AddCommand(delete.DeleteCmd)
 }
 
 func init() {

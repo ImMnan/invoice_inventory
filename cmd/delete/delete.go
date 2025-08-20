@@ -1,4 +1,4 @@
-package apply
+package delete
 
 import (
 	"fmt"
@@ -10,23 +10,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applyCMD represents the get command
-var ApplyCmd = &cobra.Command{
-	Use:   "apply",
-	Short: "Use get command for applying the resources to the Database",
+// represents delete command set
+var DeleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "Use delete command for removing resources from database",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		file, err := cmd.Flags().GetString("file")
+		file, _ := cmd.Flags().GetString("file")
 		approve, _ := cmd.Flags().GetBool("approve")
-		formatCsv, _ := cmd.Flags().GetBool("csv")
-
-		if err != nil {
-			// Handle error
-			return
-		}
-
+		//	formatCsv, _ := cmd.Flags().GetBool("csv")
 		if file != "" {
-			applyProforma(file, approve, formatCsv)
+			deleteProforma(file, approve)
 
 		} else {
 			cmd.Help()
@@ -35,14 +29,12 @@ var ApplyCmd = &cobra.Command{
 }
 
 func init() {
-	ApplyCmd.Flags().StringP("file", "f", "", "File to apply changes from")
-	ApplyCmd.Flags().Bool("approve", false, "[!] Approve the changes")
-	ApplyCmd.Flags().BoolP("csv", "c", false, "Output in CSV format")
+	DeleteCmd.Flags().StringP("file", "f", "", "File to delete changes from")
+	DeleteCmd.Flags().Bool("approve", false, "[!] Approve the changes")
+	DeleteCmd.Flags().BoolP("csv", "c", false, "Output in CSV format")
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-
-func applyProforma(fileName string, confirm, formatCsv bool) {
+func deleteProforma(fileName string, confirm bool) {
 
 	var updateData *pkg.FileData
 	if fileName != "" {
@@ -69,7 +61,7 @@ func applyProforma(fileName string, confirm, formatCsv bool) {
 	if !confirm {
 		switch {
 		case stockUpdate.SaleEntries != nil:
-			fmt.Println("\n[!] Check the data correctly before processing the invoice")
+			fmt.Println("\n[!] Check the data correctly before processing the delete/undo invoice")
 
 			saleLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(saleLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY\tTOTAL")
@@ -131,21 +123,19 @@ func applyProforma(fileName string, confirm, formatCsv bool) {
 			return
 		}
 	} else if confirm {
-		invoiceGroupedData, err := existData.UpdateInventoryFromStockUpdate(&stockUpdate)
+		invoiceGroupedData, err := existData.DelUpdatedInventoryFromStockUpdate(&stockUpdate)
 		if err != nil {
 			fmt.Printf("failed to update inventory from stock update: %v", err)
 			return
 		}
 
-		invoiceIDs, err := existData.ProcessInvoiceWithStockData(invoiceGroupedData, &ProductSlice)
+		invoiceIDs, err := existData.DelProcessedInvoiceWithStockData(invoiceGroupedData, &ProductSlice)
 		if err != nil {
 			fmt.Printf("failed to make invoice with stock data: %v", err)
 			return
 		}
 
-		if err := get.PrintInvoice(formatCsv, invoiceIDs, 0); err != nil {
-			fmt.Printf("failed to print invoice: %v", err)
-		}
+		fmt.Printf("Successfully deleted invoices: %v\n", invoiceIDs)
 	} else {
 		fmt.Println("Changes not applied. Use --approve to confirm.")
 	}

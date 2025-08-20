@@ -59,129 +59,165 @@ func (data *JsLocalDB) Invoices() ([]byte, error) {
 }
 
 func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGroupedData, product *ProductSlice) ([]string, error) {
-	var invoices []Invoice
 	var invoicesSlice []string
 	gst := 5
-	for invoiceID, invoiceItems := range invoiceGroupedData.SalesByInvoice {
-		var customerID string
-		if len(invoiceItems) > 0 {
-			customerID = invoiceItems[0].For
+	// Write or append to Data/invoices.json
+	filePath := data.InvoiceFile
+	var existingInvoices []Invoice
+	var invoices []Invoice
+	if _, err := os.Stat(filePath); err == nil {
+		f, err := os.Open(filePath)
+		if err == nil {
+			defer f.Close()
+			json.NewDecoder(f).Decode(&existingInvoices)
 		}
-		if customerID == "" {
-			fmt.Printf("Warning: No customer ID found for invoice %s, skipping...\n", invoiceID)
-			continue
-		}
+	}
 
-		var stockUpdates map[string]map[string][]int
-		if preCalculatedStock, exists := invoiceGroupedData.StockChangesByInvoice[invoiceID]; exists {
-			stockUpdates = preCalculatedStock
-		} else {
-			stockUpdates = make(map[string]map[string][]int)
-			for _, item := range invoiceItems {
-				if stockUpdates[item.Product.ProductID] == nil {
-					stockUpdates[item.Product.ProductID] = make(map[string][]int)
-				}
-				for color, quantities := range item.Product.Color {
-					colorKey := strings.ToLower(color)
-					if existing, exists := stockUpdates[item.Product.ProductID][colorKey]; exists {
-						for i, qty := range quantities {
-							if i < len(existing) {
-								existing[i] += qty
+	for invoiceID, invoiceItems := range invoiceGroupedData.SalesByInvoice {
+
+		for i, oldInvoice := range existingInvoices {
+			if invoiceID == oldInvoice.InvoiceID {
+				return nil, fmt.Errorf("error: proforma item %d - invoice %s already exists, terminating", i+1, invoiceID)
+			}
+
+			var customerID string
+			if len(invoiceItems) > 0 {
+				customerID = invoiceItems[0].For
+			}
+			if customerID == "" {
+				fmt.Printf("Warning: No customer ID found for invoice %s, skipping...\n", invoiceID)
+				continue
+			}
+
+			var stockUpdates map[string]map[string][]int
+			if preCalculatedStock, exists := invoiceGroupedData.StockChangesByInvoice[invoiceID]; exists {
+				stockUpdates = preCalculatedStock
+			} else {
+				stockUpdates = make(map[string]map[string][]int)
+				for _, item := range invoiceItems {
+					if stockUpdates[item.Product.ProductID] == nil {
+						stockUpdates[item.Product.ProductID] = make(map[string][]int)
+					}
+					for color, quantities := range item.Product.Color {
+						colorKey := strings.ToLower(color)
+						if existing, exists := stockUpdates[item.Product.ProductID][colorKey]; exists {
+							for i, qty := range quantities {
+								if i < len(existing) {
+									existing[i] += qty
+								}
 							}
+						} else {
+							stockUpdates[item.Product.ProductID][colorKey] = make([]int, len(quantities))
+							copy(stockUpdates[item.Product.ProductID][colorKey], quantities)
 						}
-					} else {
-						stockUpdates[item.Product.ProductID][colorKey] = make([]int, len(quantities))
-						copy(stockUpdates[item.Product.ProductID][colorKey], quantities)
 					}
 				}
 			}
-		}
 
-		printMap := make(map[string]string)
-		priceMap := make(map[string]float64)
-		for _, item := range *product {
-			printMap[item.Product.ProductID] = item.Product.Print
-			priceMap[item.Product.ProductID] = float64(item.Product.Price)
-		}
-
-		customersData, err := data.getCustomerData()
-		if err != nil {
-			fmt.Println("Error fetching customer data:", err)
-			return nil, err
-		}
-		var selectedCustomer *CustomerData
-		for _, customer := range customersData {
-			if customer.CustomerId == customerID {
-				selectedCustomer = &customer
-				break
+			printMap := make(map[string]string)
+			priceMap := make(map[string]float64)
+			for _, item := range *product {
+				printMap[item.Product.ProductID] = item.Product.Print
+				priceMap[item.Product.ProductID] = float64(item.Product.Price)
 			}
-		}
-		if selectedCustomer == nil {
-			return nil, fmt.Errorf("customer with ID %s not found in customers.json", customerID)
-		}
 
-		productsData, err := data.getProductData()
-		if err != nil {
-			fmt.Println("Error fetching product data:", err)
-			return nil, err
-		}
-		productMap := make(map[string]ProductStruct)
-		for _, product := range productsData {
-			productMap[product.ProductID] = product
-		}
-
-		// Build ProductStruct slice for this invoice
-		var invoiceProducts []ProductStruct
-		var totalAmount int
-		for productId, colors := range stockUpdates {
-			productInfo, exists := productMap[productId]
-			if !exists {
-				return nil, fmt.Errorf("error: Product ID %s not found in products.json", productId)
+			customersData, err := data.getCustomerData()
+			if err != nil {
+				fmt.Println("Error fetching customer data:", err)
+				return nil, err
 			}
-			for color, quantities := range colors {
-				quantity := 0
-				for _, qty := range quantities {
-					quantity += qty
+			var selectedCustomer *CustomerData
+			for _, customer := range customersData {
+				if customer.CustomerId == customerID {
+					selectedCustomer = &customer
+					break
 				}
-				price := priceMap[productId]
-				if price == 0 {
-					price = float64(productInfo.Price)
-				}
-				amount := int(price * float64(quantity))
-				totalAmount += amount
-				// Tax is now calculated on the totalAmount after all products are processed
-				invoiceProducts = append(invoiceProducts, ProductStruct{
-					ProductID: productId,
-					Name:      productInfo.Name,
-					Print:     printMap[productId],
-					Gen:       productInfo.Gen,
-					GST:       gst, // GST per product not calculated here
-					Color:     map[string][]int{color: quantities},
-					Quantity:  quantity,
-					Total:     totalAmount,
-					Price:     int(price),
-				})
 			}
-		}
-		// Calculate total tax on the totalAmount after all products are processed
-		totalTax := 5 * totalAmount / 100
-		invoice := Invoice{
-			Type:      "Sales Invoice",
-			InvoiceID: invoiceID,
-			Customer:  *selectedCustomer,
-			Date:      time.Now().Format("2006-01-02"),
-			IsPaid:    false, // set as needed
-			Product:   invoiceProducts,
-			Amount:    totalAmount,
-			TaxAmount: totalTax,
-		}
-		invoices = append(invoices, invoice)
-		invoicesSlice = append(invoicesSlice, invoice.InvoiceID)
+			if selectedCustomer == nil {
+				return nil, fmt.Errorf("customer with ID %s not found in customers.json", customerID)
+			}
 
+			productsData, err := data.getProductData()
+			if err != nil {
+				fmt.Println("Error fetching product data:", err)
+				return nil, err
+			}
+			productMap := make(map[string]ProductStruct)
+			for _, product := range productsData {
+				productMap[product.ProductID] = product
+			}
+
+			// Build ProductStruct slice for this invoice
+			var invoiceProducts []ProductStruct
+			var totalAmount int
+			for productId, colors := range stockUpdates {
+				productInfo, exists := productMap[productId]
+				if !exists {
+					return nil, fmt.Errorf("error: Product ID %s not found in products.json", productId)
+				}
+				for color, quantities := range colors {
+					quantity := 0
+					for _, qty := range quantities {
+						quantity += qty
+					}
+					price := priceMap[productId]
+					if price == 0 {
+						price = float64(productInfo.Price)
+					}
+					amount := int(price * float64(quantity))
+					totalAmount += amount
+					// Tax is now calculated on the totalAmount after all products are processed
+					invoiceProducts = append(invoiceProducts, ProductStruct{
+						ProductID: productId,
+						Name:      productInfo.Name,
+						Print:     printMap[productId],
+						Gen:       productInfo.Gen,
+						GST:       gst, // GST per product not calculated here
+						Color:     map[string][]int{color: quantities},
+						Quantity:  quantity,
+						Total:     totalAmount,
+						Price:     int(price),
+					})
+				}
+			}
+
+			// Calculate total tax on the totalAmount after all products are processed
+			totalTax := 5 * totalAmount / 100
+			invoice := Invoice{
+				Type:      "Sales Invoice",
+				InvoiceID: invoiceID,
+				Customer:  *selectedCustomer,
+				Date:      time.Now().Format("2006-01-02"),
+				IsPaid:    false, // set as needed
+				Product:   invoiceProducts,
+				Amount:    totalAmount,
+				TaxAmount: totalTax,
+			}
+
+			invoices = append(invoices, invoice)
+			invoicesSlice = append(invoicesSlice, invoice.InvoiceID)
+
+		}
 	}
+	existingInvoices = append(existingInvoices, invoices...)
+	f, err := os.Create(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	enc := json.NewEncoder(f)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(existingInvoices); err != nil {
+		return nil, err
+	}
+	return invoicesSlice, nil
+}
+
+func (data *JsLocalDB) DelProcessedInvoiceWithStockData(invoiceGroupedData *InvoiceGroupedData, product *ProductSlice) ([]string, error) {
+	var invoicesSlice []string
 
 	// Write or append to Data/invoices.json
-	filePath := "Data/invoices.json"
+	filePath := data.InvoiceFile
 	var existingInvoices []Invoice
 	if _, err := os.Stat(filePath); err == nil {
 		f, err := os.Open(filePath)
@@ -190,7 +226,24 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 			json.NewDecoder(f).Decode(&existingInvoices)
 		}
 	}
-	existingInvoices = append(existingInvoices, invoices...)
+
+	for invoiceID := range invoiceGroupedData.SalesByInvoice {
+		// Remove the invoice with the matching InvoiceID
+		found := false
+		filteredInvoices := make([]Invoice, 0, len(existingInvoices))
+		for _, inv := range existingInvoices {
+			if inv.InvoiceID == invoiceID {
+				found = true
+				invoicesSlice = append(invoicesSlice, invoiceID)
+				continue // skip this invoice
+			}
+			filteredInvoices = append(filteredInvoices, inv)
+		}
+		if !found {
+			return nil, fmt.Errorf("error: invoice %s does not exist, terminating", invoiceID)
+		}
+		existingInvoices = filteredInvoices
+	}
 	f, err := os.Create(filePath)
 	if err != nil {
 		return nil, err
