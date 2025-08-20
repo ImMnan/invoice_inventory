@@ -18,8 +18,7 @@ var ApplyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		file, err := cmd.Flags().GetString("file")
 		approve, _ := cmd.Flags().GetBool("approve")
-		csv := false
-		csv, _ = cmd.Flags().GetBool("csv")
+		formatCsv, _ := cmd.Flags().GetBool("csv")
 
 		if err != nil {
 			// Handle error
@@ -27,7 +26,7 @@ var ApplyCmd = &cobra.Command{
 		}
 
 		if file != "" {
-			applyProforma(file, approve, csv)
+			applyProforma(file, approve, formatCsv)
 
 		} else {
 			cmd.Help()
@@ -43,13 +42,7 @@ func init() {
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 
-func applyProforma(fileName string, confirm, csv bool) {
-	var format string
-	if csv {
-		format = "csv"
-	} else {
-		format = "table"
-	}
+func applyProforma(fileName string, confirm, formatCsv bool) {
 
 	var updateData *pkg.FileData
 	if fileName != "" {
@@ -144,13 +137,13 @@ func applyProforma(fileName string, confirm, csv bool) {
 			return
 		}
 
-		invoiceIDs, err := existData.ProcessInvoiceWithStockData(format, invoiceGroupedData, &ProductSlice)
+		invoiceIDs, err := existData.ProcessInvoiceWithStockData(invoiceGroupedData, &ProductSlice)
 		if err != nil {
 			fmt.Printf("failed to make invoice with stock data: %v", err)
 			return
 		}
 
-		if err := get.PrintInvoice(format, invoiceIDs, 0); err != nil {
+		if err := get.PrintInvoice(formatCsv, invoiceIDs, 0); err != nil {
 			fmt.Printf("failed to print invoice: %v", err)
 		}
 	} else {

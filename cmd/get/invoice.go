@@ -21,11 +21,11 @@ var invoiceCmd = &cobra.Command{
 	Args:    cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		invoices := []string{}
-		format, _ := cmd.Flags().GetString("csv")
+		formatCsv, _ := cmd.Flags().GetBool("csv")
 		month, _ := cmd.Flags().GetInt("month")
 		if len(args) == 0 {
 			// Show all invoices if no argument is provided
-			getInvoices(format, month)
+			getInvoices(formatCsv, month)
 			return
 		}
 		for _, id := range args {
@@ -39,7 +39,7 @@ var invoiceCmd = &cobra.Command{
 			return
 		}
 		// Print invoices for the given IDs
-		err := PrintInvoice(format, invoices, month)
+		err := PrintInvoice(formatCsv, invoices, month)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 		}
@@ -48,11 +48,11 @@ var invoiceCmd = &cobra.Command{
 
 func init() {
 	GetCmd.AddCommand(invoiceCmd)
-	invoiceCmd.Flags().String("csv", "table", "Output format (table or csv)")
+	invoiceCmd.Flags().BoolP("csv", "c", false, "Output format (table or csv)")
 	invoiceCmd.Flags().IntP("month", "m", 0, "Month to fetch invoices for (default is current month)")
 }
 
-func getInvoices(format string, month int) {
+func getInvoices(formatCsv bool, month int) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month)
 	if err != nil {
@@ -76,7 +76,7 @@ func getInvoices(format string, month int) {
 
 	json.Unmarshal(data, &invoices)
 
-	if format == "table" {
+	if !formatCsv {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(invWr, "INVOICE\tFOR\tTYPE\tAMOUNT\tDATE\tIS PAID")
 		for _, invoice := range invoices {
@@ -86,7 +86,7 @@ func getInvoices(format string, month int) {
 		}
 		invWr.Flush()
 	}
-	if format == "csv" {
+	if formatCsv {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(invWr, "INVOICE,\tFOR,\tTYPE,\tAMOUNT,\tDATE,\tIS PAID")
 		for _, invoice := range invoices {
@@ -100,7 +100,7 @@ func getInvoices(format string, month int) {
 }
 
 // printInvoice prints the invoice in table or csv format
-func PrintInvoice(format string, invoiceID []string, month int) error {
+func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 
 	var invoices []pkg.Invoice
 
@@ -126,8 +126,8 @@ func PrintInvoice(format string, invoiceID []string, month int) error {
 		for _, invoice := range invoices {
 			if id == invoice.InvoiceID {
 				found = true
-				switch format {
-				case "table":
+				switch formatCsv {
+				case false:
 					fmt.Println("\n\nFROM: SHIRIKRISHNA TECH\nGST: 1234567890\nCOO: INDIA\nCONTACT: 9725359497\n---")
 					fmt.Printf("\nTYPE: %s,\nINVOICE: %s,\nNAME: %s,\nADDRESS: %s,\nGST NUMBER: %s,\nDATE: %s\n\n",
 						invoice.Type,
@@ -178,12 +178,12 @@ func PrintInvoice(format string, invoiceID []string, month int) error {
 					finalAmount := total + invoice.TaxAmount
 					fmt.Printf("\ncGST:  %s\nsGST:  %s\nTAX:   %d INR\nTAX INVOICE AMOUNT: %d INR\n", "2.5%", "2.5%", invoice.TaxAmount, finalAmount)
 
-					fmt.Println("\n[!] This is a computer generated invoice, please report any discrepancies to sales team.")
-					fmt.Println("\n[*] No physical signature is required.")
+					fmt.Println("\n\n[!] This is a computer generated invoice, please report any discrepancies to sales team.")
+					fmt.Println("[*] No physical signature is required.")
 
 					fmt.Println("\n\n\n'lvs' Copyright (C) 2025  SHRIKRISHNA TECH")
 
-				case "csv":
+				case true:
 					fmt.Println("\nFROM, SHIRIKRISHNA TECH,\nGST, 1234567890,\nCOO, INDIA\nCONTACT, 9725359497")
 					fmt.Printf("\nTYPE,%s,\nINVOICE,%s,\nNAME,%s,\nADDRESS,%s,\nGST NUMBER,%s,\nDATE,%s\n\n",
 						invoice.Type,
@@ -193,30 +193,50 @@ func PrintInvoice(format string, invoiceID []string, month int) error {
 						invoice.Customer.GstNumber,
 						invoice.Date)
 					w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-					fmt.Fprintln(w, "PRODUCT ID,\tPRODUCT Name,\tPRICE,\tPRINT,\tCOLOR,\tXS,\tS,\tM,\tL,\tXL,\t2X,\t3X,\t4X,\tQTY,\tTOTAL")
+					fmt.Fprintln(w, "PRODUCT Name,\tPRICE,\tPRINT,\tCOLOR,\tXS,\tS,\tM,\tL,\tXL,\t2X,\t3X,\t4X,\tQTY,\tTOTAL")
+					var total int
+					var qtyTotal int
+					var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
 					for _, p := range invoice.Product {
 						for color, quantities := range p.Color {
-							qty := 0
-							for _, q := range quantities {
-								qty += q
-							}
-							line := fmt.Sprintf("%s\t%d\t%s\t%s",
+							line := fmt.Sprintf("%s,\t%d,\t%s,\t%s,",
 								p.Name,
 								p.Price,
 								p.Print,
 								color,
 							)
-							for _, q := range quantities {
-								line += fmt.Sprintf("\t%d", q)
+							// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
+							// If not, pad with zeros
+							padded := make([]int, 8)
+							copy(padded, quantities)
+							xsTotal += padded[0]
+							sTotal += padded[1]
+							mTotal += padded[2]
+							lTotal += padded[3]
+							xlTotal += padded[4]
+							x2Total += padded[5]
+							x3Total += padded[6]
+							x4Total += padded[7]
+							for _, q := range padded {
+								line += fmt.Sprintf("\t%d,", q)
 							}
-							total := p.Price * qty
-							line += fmt.Sprintf("\t%d\t%d", qty, total)
+							line += fmt.Sprintf("\t%d,\t%d,", p.Quantity, p.Total)
 							fmt.Fprintln(w, line)
-							taxAmmount := total * 5 / 100
-							fmt.Printf("\nTOTAL, %d\ncGST, %s\nsGST, %s\nTAX, %d INR\nTAX INVOICE AMOUNT, %d INR\n", total, "2.5%", "2.5%", taxAmmount, invoice.TaxAmount)
+							total += p.Total
+							qtyTotal += p.Quantity
 						}
 					}
+					fmt.Fprintf(w, "FINAL,\t,\t,\t,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal, total)
+
 					w.Flush()
+					finalAmount := total + invoice.TaxAmount
+					fmt.Printf("\ncGST,  %s,\nsGST,  %s,\nTAX,   %d, INR,\nTAX INVOICE AMOUNT, %d, INR\n", "2.5%", "2.5%", invoice.TaxAmount, finalAmount)
+
+					fmt.Println("\n\n[!] This is a computer generated invoice please report any discrepancies to sales team.")
+					fmt.Println("[*] No physical signature is required.")
+
+					fmt.Println("\n\n\n'lvs' Copyright (C) 2025  SHRIKRISHNA TECH")
+
 				}
 				break
 			}

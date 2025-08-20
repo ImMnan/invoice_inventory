@@ -58,7 +58,7 @@ func (data *JsLocalDB) Invoices() ([]byte, error) {
 	return invoiceData, nil
 }
 
-func (data *JsLocalDB) ProcessInvoiceWithStockData(format string, invoiceGroupedData *InvoiceGroupedData, product *ProductSlice) ([]string, error) {
+func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGroupedData, product *ProductSlice) ([]string, error) {
 	var invoices []Invoice
 	var invoicesSlice []string
 	gst := 5
