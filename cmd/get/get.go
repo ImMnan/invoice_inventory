@@ -168,7 +168,7 @@ func ConfigData(month int) (inventoryDB, customerDB, invoiceDB, productDB string
 		return "", "", "", "", err
 	}
 	var inventoryData, customerData, invoiceData, productData string
-	monthSuffixes := []string{"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+	monthSuffixes := []string{"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Test"}
 	suffix := monthSuffixes[month]
 	prefix := "data"
 	if suffix != "" {

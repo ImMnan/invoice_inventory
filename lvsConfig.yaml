@@ -10,3 +10,9 @@ dataJul:
   invoicesData: Data/2025/invoices_july.json
   productsData: Data/2025/products_july.json
   inventoryData: Data/2025/inventory_july.json
+
+dataTest:
+  customersData: Data/test/customers_test.json
+  invoicesData: Data/test/invoices_test.json
+  productsData: Data/test/products_test.json
+  inventoryData: Data/test/inventory_test.json
