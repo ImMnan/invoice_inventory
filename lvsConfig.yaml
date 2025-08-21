@@ -6,7 +6,7 @@ data:
   inventoryData: Data/inventory.json
 
 dataJul:
-  customersData: Data/customers_july.json
-  invoicesData: Data/invoices_july.json
-  productsData: Data/products_july.json
-  inventoryData: Data/inventory_july.json
+  customersData: Data/2025/customers_july.json
+  invoicesData: Data/2025/invoices_july.json
+  productsData: Data/2025/products_july.json
+  inventoryData: Data/2025/inventory_july.json
