@@ -29,7 +29,7 @@ else
 endif
 
 clean:
-	rm -f $(APP_NAME)$(EXTN) $(APP_NAME).exe
+	rm -f $(INSTALL_PATH)/$(APP_NAME)$(EXTN)
 
 info:
 	@echo "Building the Project for OS=$(OS), ARCH=$(ARCH), INSTALL_PATH=$(INSTALL_PATH)"

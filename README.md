@@ -32,8 +32,6 @@ lvs update stock <product_id>
 lvs update stock <product_id> --add/--remove
 ```
 
+
 ```sh
-
-
-
 ```
