@@ -44,6 +44,17 @@ func init() {
 
 func applyProforma(fileName string, confirm, formatCsv bool) {
 
+	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(0)
+	if err != nil {
+		fmt.Println("Error fetching config data:", err)
+		return
+	}
+	existData := &pkg.JsLocalDB{
+		InventoryFile: inventoryDB,
+		CustomerFile:  customerDB,
+		InvoiceFile:   invoiceDB,
+		ProductFile:   productDB,
+	}
 	var updateData *pkg.FileData
 	if fileName != "" {
 		updateData = &pkg.FileData{Data: fileName}
@@ -59,12 +70,6 @@ func applyProforma(fileName string, confirm, formatCsv bool) {
 		fmt.Printf("failed to make stock update: %v", err)
 		return
 	}
-	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(0)
-	if err != nil {
-		fmt.Printf("failed to read config data: %v", err)
-		return
-	}
-	existData := &pkg.JsLocalDB{InventoryFile: inventoryDB, CustomerFile: customerDB, InvoiceFile: invoiceDB, ProductFile: productDB}
 
 	if !confirm {
 		switch {
@@ -131,11 +136,14 @@ func applyProforma(fileName string, confirm, formatCsv bool) {
 			return
 		}
 	} else if confirm {
+		//fmt.Printf("Debug: %v\n%v", existData, &stockUpdate)
 		invoiceGroupedData, err := existData.UpdateInventoryFromStockUpdate(&stockUpdate)
 		if err != nil {
 			fmt.Printf("failed to update inventory from stock update: %v", err)
 			return
 		}
+
+		//fmt.Printf("Debug: %v\n%v", invoiceGroupedData, &ProductSlice)
 
 		invoiceIDs, err := existData.ProcessInvoiceWithStockData(invoiceGroupedData, &ProductSlice)
 		if err != nil {
