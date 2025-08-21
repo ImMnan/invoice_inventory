@@ -1,30 +1,35 @@
-# Go parameters
-APP_NAME=lvs
-BIN_DIR=/usr/local/bin/
-BIN_PATH=$(BIN_DIR)/$(APP_NAME)
 
-.PHONY: all build clean info
+# User-parameterized variables (can be overridden: make build OS=linux ARCH=amd64 INSTALL_PATH=/usr/local/bin)
+OS ?= $(shell uname | tr '[:upper:]' '[:lower:]')
+ARCH ?= arm64
+INSTALL_PATH ?= /usr/local/bin
+APP_NAME = lvs
+
+ifeq ($(OS),windows)
+    EXTN := .exe
+else
+    EXTN :=
+endif
+
+.PHONY: all build install clean info
 
 all: build
 
 build:
-	mkdir -p $(BIN_PATH)
-	go build -o $(BIN_PATH) main.go
-	chmod 755 $(BIN_PATH)
+	GOOS=$(OS) GOARCH=$(ARCH) go build -o $(APP_NAME)$(EXTN) main.go
 
-install:
-	tar -xvf $(APP_NAME).tar.gz
-	chmod 755 $(APP_NAME)
-	mkdir -p $(BIN_PATH)
-	cp $(APP_NAME) $(BIN_PATH)
-
+install: build
+ifeq ($(OS),windows)
+	@echo "Copying binary to $(INSTALL_PATH) and setting PATH for Windows."
+	copy $(APP_NAME)$(EXT) $(INSTALL_PATH)\\$(APP_NAME)$(EXTN)
+	@echo "Add $(INSTALL_PATH) to your PATH if not already present."
+else
+	@echo "Copying binary to $(INSTALL_PATH) and making it executable."
+	install -m 755 $(APP_NAME)$(EXTN) $(INSTALL_PATH)/$(APP_NAME)$(EXTN)
+endif
 
 clean:
-	rm -f $(BIN_PATH)
+	rm -f $(APP_NAME)$(EXTN) $(APP_NAME).exe
 
 info:
-	echo "Building the Project..."
-
-
-
-	
+	@echo "Building the Project for OS=$(OS), ARCH=$(ARCH), INSTALL_PATH=$(INSTALL_PATH)"

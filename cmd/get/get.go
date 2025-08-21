@@ -162,7 +162,7 @@ func ConfigData(month int) (inventoryDB, customerDB, invoiceDB, productDB string
 	vp.SetConfigName("lvsConfig")
 	vp.SetConfigType("yaml")
 	//	vp.AddConfigPath(".")
-	vp.AddConfigPath(".")
+	vp.AddConfigPath("$HOME")
 	err := vp.ReadInConfig()
 	if err != nil {
 		return "", "", "", "", err
