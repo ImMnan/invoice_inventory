@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 	//"github.com/immnan/invoice_invoice/cmd/apply"
 )
@@ -74,6 +73,17 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 	}
 
 	for invoiceID, invoiceItems := range invoiceGroupedData.SalesByInvoice {
+		// Only use product rows for this invoiceID
+		var filteredProducts []TshirtStruct
+		for _, item := range *product {
+			if item.Invoice == invoiceID {
+				filteredProducts = append(filteredProducts, item)
+			}
+		}
+		// Debug print for filteredProducts
+		//fmt.Printf("\n[DEBUG] InvoiceID: %s, filteredProducts count: %d\n", invoiceID, len(filteredProducts))
+		//for i, item := range filteredProducts {
+		//fmt.Printf("[DEBUG] %d: Invoice=%s, ProductID=%s, Print=%s, Color=%v, Qty=%d\n", i, item.Invoice, item.Product.ProductID, item.Product.Print, item.Product.Color, item.Product.Quantity)
 		for _, oldInvoice := range existingInvoices {
 			if oldInvoice.InvoiceID == invoiceID {
 				return nil, fmt.Errorf("error: invoice %s already exists, terminating", invoiceID)
@@ -87,39 +97,6 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 			fmt.Printf("Warning: No customer ID found for invoice %s, skipping...\n", invoiceID)
 			continue
 		}
-
-		var stockUpdates map[string]map[string][]int
-		if preCalculatedStock, exists := invoiceGroupedData.StockChangesByInvoice[invoiceID]; exists {
-			stockUpdates = preCalculatedStock
-		} else {
-			stockUpdates = make(map[string]map[string][]int)
-			for _, item := range invoiceItems {
-				if stockUpdates[item.Product.ProductID] == nil {
-					stockUpdates[item.Product.ProductID] = make(map[string][]int)
-				}
-				for color, quantities := range item.Product.Color {
-					colorKey := strings.ToLower(color)
-					if existing, exists := stockUpdates[item.Product.ProductID][colorKey]; exists {
-						for i, qty := range quantities {
-							if i < len(existing) {
-								existing[i] += qty
-							}
-						}
-					} else {
-						stockUpdates[item.Product.ProductID][colorKey] = make([]int, len(quantities))
-						copy(stockUpdates[item.Product.ProductID][colorKey], quantities)
-					}
-				}
-			}
-		}
-
-		printMap := make(map[string]string)
-		priceMap := make(map[string]float64)
-		for _, item := range *product {
-			printMap[item.Product.ProductID] = item.Product.Print
-			priceMap[item.Product.ProductID] = float64(item.Product.Price)
-		}
-
 		customersData, err := data.getCustomerData()
 		if err != nil {
 			fmt.Println("Error fetching customer data:", err)
@@ -135,7 +112,9 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 		if selectedCustomer == nil {
 			return nil, fmt.Errorf("customer with ID %s not found in customers.json", customerID)
 		}
-
+		// Build ProductStruct slice for this invoice: each proforma row becomes a separate item
+		var invoiceProducts []ProductStruct
+		var totalAmount int
 		productsData, err := data.getProductData()
 		if err != nil {
 			fmt.Println("Error fetching product data:", err)
@@ -145,41 +124,31 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 		for _, product := range productsData {
 			productMap[product.ProductID] = product
 		}
-
-		// Build ProductStruct slice for this invoice
-		var invoiceProducts []ProductStruct
-		var totalAmount int
-		for productId, colors := range stockUpdates {
-			productInfo, exists := productMap[productId]
-			if !exists {
-				return nil, fmt.Errorf("error: Product ID %s not found in products.json", productId)
-			}
-			for color, quantities := range colors {
+		for _, item := range filteredProducts {
+			for color, quantities := range item.Product.Color {
 				quantity := 0
 				for _, qty := range quantities {
 					quantity += qty
 				}
-				price := priceMap[productId]
-				if price == 0 {
-					price = float64(productInfo.Price)
+				productInfo, exists := productMap[item.Product.ProductID]
+				if !exists {
+					return nil, fmt.Errorf("error: Product ID %s not found in products.json", item.Product.ProductID)
 				}
-				amount := int(price * float64(quantity))
+				amount := int(item.Product.Price) * quantity
 				totalAmount += amount
-				// Tax is now calculated on the totalAmount after all products are processed
 				invoiceProducts = append(invoiceProducts, ProductStruct{
-					ProductID: productId,
+					ProductID: item.Product.ProductID,
 					Name:      productInfo.Name,
-					Print:     printMap[productId],
+					Print:     item.Product.Print,
 					Gen:       productInfo.Gen,
 					GST:       gst, // GST per product not calculated here
 					Color:     map[string][]int{color: quantities},
 					Quantity:  quantity,
-					Total:     totalAmount,
-					Price:     int(price),
+					Total:     amount,
+					Price:     int(item.Product.Price),
 				})
 			}
 		}
-
 		// Calculate total tax on the totalAmount after all products are processed
 		totalTax := 5 * totalAmount / 100
 		invoice := Invoice{
@@ -192,10 +161,8 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 			Amount:    totalAmount,
 			TaxAmount: totalTax,
 		}
-
 		invoices = append(invoices, invoice)
 		invoicesSlice = append(invoicesSlice, invoice.InvoiceID)
-
 	}
 	existingInvoices = append(existingInvoices, invoices...)
 	f, err := os.Create(filePath)

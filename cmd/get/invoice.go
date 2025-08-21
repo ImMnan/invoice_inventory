@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"text/tabwriter"
 
@@ -126,6 +127,44 @@ func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 		for _, invoice := range invoices {
 			if id == invoice.InvoiceID {
 				found = true
+
+				// Group products by print name
+				type productRow struct {
+					Name       string
+					Price      int
+					Print      string
+					Color      string
+					Quantities []int
+					Quantity   int
+					Total      int
+				}
+				printMap := make(map[string][]productRow)
+				for _, p := range invoice.Product {
+					for color, quantities := range p.Color {
+						row := productRow{
+							Name:       p.Name,
+							Price:      p.Price,
+							Print:      p.Print,
+							Color:      color,
+							Quantities: make([]int, 8),
+							Quantity:   p.Quantity,
+							Total:      p.Total,
+						}
+						copy(row.Quantities, quantities)
+						printMap[p.Print] = append(printMap[p.Print], row)
+					}
+				}
+
+				// To ensure order, collect print names
+				var printNames []string
+				for printName := range printMap {
+					printNames = append(printNames, printName)
+				}
+				// Sort print names for consistent output
+				if len(printNames) > 1 {
+					sort.Strings(printNames)
+				}
+
 				switch formatCsv {
 				case false:
 					fmt.Println("\n\nFROM: SHIRIKRISHNA TECH\nGST: 1234567890\nCOO: INDIA\nCONTACT: 9725359497\n---")
@@ -142,18 +181,16 @@ func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 					var total int
 					var qtyTotal int
 					var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
-					for _, p := range invoice.Product {
-						for color, quantities := range p.Color {
+					for _, printName := range printNames {
+						rows := printMap[printName]
+						for _, row := range rows {
 							line := fmt.Sprintf("%s\t%d\t%s\t%s",
-								p.Name,
-								p.Price,
-								p.Print,
-								color,
+								row.Name,
+								row.Price,
+								row.Print,
+								row.Color,
 							)
-							// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
-							// If not, pad with zeros
-							padded := make([]int, 8)
-							copy(padded, quantities)
+							padded := row.Quantities
 							xsTotal += padded[0]
 							sTotal += padded[1]
 							mTotal += padded[2]
@@ -165,10 +202,10 @@ func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 							for _, q := range padded {
 								line += fmt.Sprintf("\t%d", q)
 							}
-							line += fmt.Sprintf("\t%d\t%d", p.Quantity, p.Total)
+							line += fmt.Sprintf("\t%d\t%d", row.Quantity, row.Total)
 							fmt.Fprintln(w, line)
-							total += p.Total
-							qtyTotal += p.Quantity
+							total += row.Total
+							qtyTotal += row.Quantity
 						}
 					}
 					fmt.Fprintln(w, "------------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
@@ -197,18 +234,16 @@ func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 					var total int
 					var qtyTotal int
 					var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
-					for _, p := range invoice.Product {
-						for color, quantities := range p.Color {
+					for _, printName := range printNames {
+						rows := printMap[printName]
+						for _, row := range rows {
 							line := fmt.Sprintf("%s,\t%d,\t%s,\t%s,",
-								p.Name,
-								p.Price,
-								p.Print,
-								color,
+								row.Name,
+								row.Price,
+								row.Print,
+								row.Color,
 							)
-							// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
-							// If not, pad with zeros
-							padded := make([]int, 8)
-							copy(padded, quantities)
+							padded := row.Quantities
 							xsTotal += padded[0]
 							sTotal += padded[1]
 							mTotal += padded[2]
@@ -220,10 +255,10 @@ func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 							for _, q := range padded {
 								line += fmt.Sprintf("\t%d,", q)
 							}
-							line += fmt.Sprintf("\t%d,\t%d,", p.Quantity, p.Total)
+							line += fmt.Sprintf("\t%d,\t%d,", row.Quantity, row.Total)
 							fmt.Fprintln(w, line)
-							total += p.Total
-							qtyTotal += p.Quantity
+							total += row.Total
+							qtyTotal += row.Quantity
 						}
 					}
 					fmt.Fprintf(w, "FINAL,\t,\t,\t,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d,\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal, total)
