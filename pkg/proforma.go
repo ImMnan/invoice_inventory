@@ -19,7 +19,7 @@ func (product *ProductSlice) addProforma() (map[string]map[string][]int, []Profo
 	var saleEntries []Proforma
 
 	for _, productItem := range *product {
-		if productItem.Type == "proforma" && productItem.Type != "purchase-invoice" {
+		if productItem.Type == "proforma" && productItem.Type != "purchase-invoice" && productItem.Type != "job" {
 			// Create a sale entry from the proforma item
 			saleEntry := Proforma{
 				UUID:     uuid.New().String(),

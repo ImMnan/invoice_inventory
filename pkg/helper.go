@@ -41,6 +41,7 @@ type ProductSlice []TshirtStruct
 
 type Proforma = TshirtStruct
 type Purchase = TshirtStruct
+type Jobwork = TshirtStruct
 
 //type ProformaSlice []TshirtStruct
 //type PurchaseSlice []TshirtStruct

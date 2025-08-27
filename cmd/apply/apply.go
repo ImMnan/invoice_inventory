@@ -19,6 +19,7 @@ var ApplyCmd = &cobra.Command{
 		file, err := cmd.Flags().GetString("file")
 		approve, _ := cmd.Flags().GetBool("approve")
 		formatCsv, _ := cmd.Flags().GetBool("csv")
+		month, _ := cmd.Flags().GetInt("month")
 
 		if err != nil {
 			// Handle error
@@ -26,7 +27,7 @@ var ApplyCmd = &cobra.Command{
 		}
 
 		if file != "" {
-			applyProforma(file, approve, formatCsv)
+			applyProforma(file, approve, formatCsv, month)
 
 		} else {
 			cmd.Help()
@@ -38,15 +39,16 @@ func init() {
 	ApplyCmd.Flags().StringP("file", "f", "", "File to apply changes from")
 	ApplyCmd.Flags().Bool("approve", false, "[!] Approve the changes")
 	ApplyCmd.Flags().BoolP("csv", "c", false, "Output in CSV format")
+	ApplyCmd.Flags().IntP("month", "m", 0, "Month to apply changes for")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 
-func applyProforma(fileName string, confirm, formatCsv bool) {
+func applyProforma(fileName string, confirm, formatCsv bool, month int) {
 
-	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(0)
+	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(month)
 	if err != nil {
-		fmt.Println("Error fetching config data:", err)
+		fmt.Printf("Error fetching config data for month %d: %v\n", month, err)
 		return
 	}
 	existData := &pkg.JsLocalDB{
@@ -151,7 +153,7 @@ func applyProforma(fileName string, confirm, formatCsv bool) {
 			return
 		}
 
-		if err := get.PrintInvoice(formatCsv, invoiceIDs, 0); err != nil {
+		if err := get.PrintInvoice(formatCsv, invoiceIDs, month); err != nil {
 			fmt.Printf("failed to print invoice: %v", err)
 		}
 	} else {
