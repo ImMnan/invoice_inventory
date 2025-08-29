@@ -167,7 +167,7 @@ func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 
 				switch formatCsv {
 				case false:
-					fmt.Println("\n\nFROM: SHIRIKRISHNA TECH\nGST: 1234567890\nCOO: INDIA\nCONTACT: 9725359497\n---")
+					fmt.Println("\n\nFROM: SHIRIKRISHNA TECH\nGST: 24ERKPP7790D1ZC\nCOO: INDIA\nCONTACT: 9725359497\n---")
 					fmt.Printf("\nTYPE: %s,\nINVOICE: %s,\nNAME: %s,\nADDRESS: %s,\nGST NUMBER: %s,\nDATE: %s\n\n",
 						invoice.Type,
 						invoice.InvoiceID,

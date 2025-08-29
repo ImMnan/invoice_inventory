@@ -1,1 +1,45 @@
-[]
+[
+  {
+    "type": "Sales Invoice",
+    "invoice_id": "SK25CPQ10101",
+    "customer": {
+      "customer_id": "SK00",
+      "name": "cosumer",
+      "address": "NA",
+      "rating": 0,
+      "gst_number": "NA",
+      "contact": "NA",
+      "email": "NA",
+      "origin": 0
+    },
+    "date": "2025-08-28",
+    "isPaid": false,
+    "product": [
+      {
+        "product_id": "CO180G-RG",
+        "name": "Cotton Regular-fit T-Shirt",
+        "print": "Moriya",
+        "gen": "",
+        "gst": 5,
+        "color": {
+          "navy_blue": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "total": 250,
+        "price": 250,
+        "description": "",
+        "quantity": 1
+      }
+    ],
+    "amount": 250,
+    "tax_amount": 12
+  }
+]
