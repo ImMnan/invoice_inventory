@@ -34,15 +34,11 @@ func (data *JsLocalDB) Stocks() ([]byte, error) {
 	return stockData, nil
 }
 
-// Package pkg provides inventory management functionality for processing
-// proforma invoices and purchase orders, updating stock levels, and
-// maintaining transaction history in JSON format.
-
 func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]int) error {
+
 	if stkUp.proformaStkUpdates == nil && stkUp.purchaseStkUpdates == nil {
 		return fmt.Errorf("stock updates are not initialized")
 	}
-
 	// Process proforma stock updates (subtract quantities)
 	if stkUp.proformaStkUpdates != nil {
 		for productUID, colors := range stkUp.proformaStkUpdates {

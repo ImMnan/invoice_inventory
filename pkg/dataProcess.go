@@ -159,7 +159,6 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 		} else {
 			return nil, fmt.Errorf("invalid row type %s at row %d", row[0], i)
 		}
-
 	}
 	return productData, nil
 

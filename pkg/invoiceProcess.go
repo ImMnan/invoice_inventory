@@ -1,10 +1,13 @@
 package pkg
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 	//"github.com/immnan/invoice_invoice/cmd/apply"
 )
@@ -255,4 +258,119 @@ func (data *JsLocalDB) getCustomerData() ([]CustomerData, error) {
 		return nil, err
 	}
 	return customers, nil
+}
+
+func SimpleInvoice(data *JsLocalDB) error {
+	// This function reads the CSV, groups by invoice ID, and prints invoices in invoices.json format (no calculations, no file write)
+
+	fileData, err := os.Open(data.InvoiceFile)
+	if err != nil {
+		return err
+	}
+	defer fileData.Close()
+
+	dataValue, err := csv.NewReader(fileData).ReadAll()
+	if err != nil {
+		return fmt.Errorf("failed to read csv data: %w", err)
+	}
+
+	// Group rows by invoice ID
+	type invoiceGroup struct {
+		rows [][]string
+	}
+	groups := make(map[string]*invoiceGroup)
+
+	for i, row := range dataValue {
+		if i == 0 {
+			continue // skip header
+		}
+		if row[0] != "proforma" {
+			continue
+		}
+		invoiceID := strings.TrimSpace(row[1])
+		if invoiceID == "" {
+			continue
+		}
+		if _, ok := groups[invoiceID]; !ok {
+			groups[invoiceID] = &invoiceGroup{}
+		}
+		groups[invoiceID].rows = append(groups[invoiceID].rows, row)
+	}
+
+	var invoices []Invoice
+
+	for invoiceID, group := range groups {
+		// Use the first row for customer info, date, etc.
+		row := group.rows[0]
+		customerID := strings.TrimSpace(row[2])
+		// Build CustomerData (minimal, as CSV may not have all fields)
+		customer := CustomerData{
+			CustomerId: customerID,
+			Name:       "",
+			Address:    "",
+			Rating:     0,
+			GstNumber:  "",
+			Contact:    "",
+			Email:      "",
+			Origin:     0,
+		}
+		var products []ProductStruct
+		for _, row := range group.rows {
+			if len(row) < 19 {
+				continue
+			}
+			colorMap := make(map[string][]int)
+			quantities := make([]int, 8)
+			for j := 0; j < 8; j++ {
+				if qty, err := strconv.Atoi(strings.TrimSpace(row[10+j])); err == nil {
+					quantities[j] = qty
+				}
+			}
+			color := strings.TrimSpace(row[9])
+			colorMap[color] = quantities
+			quantity := 0
+			if qtyStr := strings.TrimSpace(row[18]); qtyStr != "" {
+				if t, err := strconv.Atoi(qtyStr); err == nil {
+					quantity = t
+				}
+			}
+			priceInt := 0
+			if p, err := strconv.Atoi(strings.TrimSpace(row[5])); err == nil {
+				priceInt = p
+			}
+			gstInt := 0
+			if g, err := strconv.Atoi(strings.TrimSpace(row[6])); err == nil {
+				gstInt = g
+			}
+			products = append(products, ProductStruct{
+				ProductID: strings.TrimSpace(row[3]),
+				Name:      "",
+				Print:     strings.TrimSpace(row[7]),
+				Gen:       strings.TrimSpace(row[8]),
+				GST:       gstInt,
+				Color:     colorMap,
+				Quantity:  quantity,
+				Total:     priceInt * quantity,
+				Price:     priceInt,
+			})
+		}
+		invoice := Invoice{
+			Type:      "Sales Invoice",
+			InvoiceID: invoiceID,
+			Customer:  customer,
+			Date:      strings.TrimSpace(row[4]),
+			IsPaid:    false,
+			Product:   products,
+			Amount:    0, // No calculation
+			TaxAmount: 0, // No calculation
+		}
+		invoices = append(invoices, invoice)
+	}
+
+	jsonData, err := json.MarshalIndent(invoices, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(jsonData))
+	return nil
 }
