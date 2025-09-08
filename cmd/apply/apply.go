@@ -27,7 +27,7 @@ var ApplyCmd = &cobra.Command{
 		}
 
 		if file != "" {
-			applyProforma(file, approve, formatCsv, dry, month)
+			applyInvoice(file, approve, formatCsv, dry, month)
 
 		} else {
 			cmd.Help()
@@ -40,12 +40,11 @@ func init() {
 	ApplyCmd.Flags().Bool("approve", false, "[!] Approve the changes")
 	ApplyCmd.Flags().BoolP("csv", "c", false, "Output in CSV format")
 	ApplyCmd.Flags().IntP("month", "m", 0, "Month to apply changes for")
-	ApplyCmd.Flags().Bool("dry", false, "Dry invoice creation making changes")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 
-func applyProforma(fileName string, confirm, formatCsv, dry bool, month int) {
+func applyInvoice(fileName string, confirm, formatCsv, dry bool, month int) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(month)
 	if err != nil {
@@ -188,7 +187,7 @@ func applyProforma(fileName string, confirm, formatCsv, dry bool, month int) {
 		}
 	} else if confirm {
 		//fmt.Printf("Debug: %v\n%v", existData, &stockUpdate)
-		invoiceGroupedData, err := existData.UpdateInventoryFromStockUpdate(&stockUpdate)
+		err := existData.UpdateInventoryFromStockUpdate(&stockUpdate)
 		if err != nil {
 			fmt.Printf("failed to update inventory from stock update: %v", err)
 			return
@@ -196,7 +195,7 @@ func applyProforma(fileName string, confirm, formatCsv, dry bool, month int) {
 
 		//fmt.Printf("Debug: %v\n%v", invoiceGroupedData, &ProductSlice)
 
-		invoiceIDs, err := existData.ProcessInvoiceWithStockData(invoiceGroupedData, &ProductSlice)
+		invoiceIDs, err := existData.ProcessInvoiceWithStockData(&ProductSlice)
 		if err != nil {
 			fmt.Printf("failed to make invoice with stock data: %v", err)
 			return

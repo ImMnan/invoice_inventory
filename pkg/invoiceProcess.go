@@ -60,10 +60,9 @@ func (data *JsLocalDB) Invoices() ([]byte, error) {
 	return invoiceData, nil
 }
 
-func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGroupedData, product *ProductSlice) ([]string, error) {
+func (data *JsLocalDB) ProcessInvoiceWithStockData(product *ProductSlice) ([]string, error) {
 	var invoicesSlice []string
 	gst := 5
-	// Write or append to Data/invoices.json
 	filePath := data.InvoiceFile
 	var existingInvoices []Invoice
 	var invoices []Invoice
@@ -75,27 +74,23 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 		}
 	}
 
-	for invoiceID, invoiceItems := range invoiceGroupedData.SalesByInvoice {
-		// Only use product rows for this invoiceID
-		var filteredProducts []TshirtStruct
-		for _, item := range *product {
-			if item.Invoice == invoiceID {
-				filteredProducts = append(filteredProducts, item)
-			}
+	// Group products by invoice ID
+	invoiceProductMap := make(map[string][]TshirtStruct)
+	invoiceCustomerMap := make(map[string]string)
+	for _, item := range *product {
+		invoiceProductMap[item.Invoice] = append(invoiceProductMap[item.Invoice], item)
+		if invoiceCustomerMap[item.Invoice] == "" {
+			invoiceCustomerMap[item.Invoice] = item.For
 		}
-		// Debug print for filteredProducts
-		//fmt.Printf("\n[DEBUG] InvoiceID: %s, filteredProducts count: %d\n", invoiceID, len(filteredProducts))
-		//for i, item := range filteredProducts {
-		//fmt.Printf("[DEBUG] %d: Invoice=%s, ProductID=%s, Print=%s, Color=%v, Qty=%d\n", i, item.Invoice, item.Product.ProductID, item.Product.Print, item.Product.Color, item.Product.Quantity)
+	}
+
+	for invoiceID, filteredProducts := range invoiceProductMap {
 		for _, oldInvoice := range existingInvoices {
 			if oldInvoice.InvoiceID == invoiceID {
 				return nil, fmt.Errorf("error: invoice %s already exists, terminating", invoiceID)
 			}
 		}
-		var customerID string
-		if len(invoiceItems) > 0 {
-			customerID = invoiceItems[0].For
-		}
+		customerID := invoiceCustomerMap[invoiceID]
 		if customerID == "" {
 			fmt.Printf("Warning: No customer ID found for invoice %s, skipping...\n", invoiceID)
 			continue
@@ -115,7 +110,6 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 		if selectedCustomer == nil {
 			return nil, fmt.Errorf("customer with ID %s not found in customers.json", customerID)
 		}
-		// Build ProductStruct slice for this invoice: each proforma row becomes a separate item
 		var invoiceProducts []ProductStruct
 		var totalAmount int
 		productsData, err := data.getProductData()
@@ -144,7 +138,7 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 					Name:      productInfo.Name,
 					Print:     item.Product.Print,
 					Gen:       productInfo.Gen,
-					GST:       gst, // GST per product not calculated here
+					GST:       gst,
 					Color:     map[string][]int{color: quantities},
 					Quantity:  quantity,
 					Total:     amount,
@@ -152,14 +146,13 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 				})
 			}
 		}
-		// Calculate total tax on the totalAmount after all products are processed
 		totalTax := 5 * totalAmount / 100
 		invoice := Invoice{
 			Type:      "Sales Invoice",
 			InvoiceID: invoiceID,
 			Customer:  *selectedCustomer,
 			Date:      time.Now().Format("2006-01-02"),
-			IsPaid:    false, // set as needed
+			IsPaid:    false,
 			Product:   invoiceProducts,
 			Amount:    totalAmount,
 			TaxAmount: totalTax,

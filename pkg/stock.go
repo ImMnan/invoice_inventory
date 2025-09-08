@@ -129,78 +129,28 @@ func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]i
 	return nil
 }
 
-func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) (*InvoiceGroupedData, error) {
+func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) error {
 	// Step 1: Get current inventory and in_stock values
 	allEntries, currentStock, err := data.getExistingStock()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get existing stock: %w", err)
+		return fmt.Errorf("failed to get existing stock: %w", err)
 	}
 
 	// Step 2: Apply stock calculations (subtract for sales, add for purchases)
-	// This modifies the currentStock map with the new calculated values
 	if err := stockUpdate.dataCalculation(currentStock); err != nil {
-		return nil, fmt.Errorf("failed to calculate stock updates: %w", err)
+		return fmt.Errorf("failed to calculate stock updates: %w", err)
 	}
 
-	// Step 3: Create grouped data for invoice generation
-	invoiceGroupedData := &InvoiceGroupedData{
-		SalesByInvoice:        make(map[string][]Proforma),
-		StockChangesByInvoice: make(map[string]map[string]map[string][]int),
-	}
-
-	// Group sale entries by invoice ID
-	for _, saleEntry := range stockUpdate.SaleEntries {
-		invoiceID := saleEntry.Invoice
-		invoiceGroupedData.SalesByInvoice[invoiceID] = append(invoiceGroupedData.SalesByInvoice[invoiceID], saleEntry)
-
-		// Track stock changes for this invoice
-		if invoiceGroupedData.StockChangesByInvoice[invoiceID] == nil {
-			invoiceGroupedData.StockChangesByInvoice[invoiceID] = make(map[string]map[string][]int)
-		}
-
-		productUID := saleEntry.Product.ProductID
-		if invoiceGroupedData.StockChangesByInvoice[invoiceID][productUID] == nil {
-			invoiceGroupedData.StockChangesByInvoice[invoiceID][productUID] = make(map[string][]int)
-		}
-
-		// Add quantities for this sale entry
-		for color, quantities := range saleEntry.Product.Color {
-			colorKey := strings.ToLower(color)
-			if existing, exists := invoiceGroupedData.StockChangesByInvoice[invoiceID][productUID][colorKey]; exists {
-				// Add to existing quantities
-				for i, qty := range quantities {
-					if i < len(existing) {
-						existing[i] += qty
-					}
-				}
-			} else {
-				// Initialize with current quantities
-				invoiceGroupedData.StockChangesByInvoice[invoiceID][productUID][colorKey] = make([]int, len(quantities))
-				copy(invoiceGroupedData.StockChangesByInvoice[invoiceID][productUID][colorKey], quantities)
-			}
-		}
-	}
-
-	// Note: Purchase entries are still added to inventory for record keeping,
-	// but they don't need to be grouped by invoice for invoice generation
-	// since purchases don't generate customer invoices
-
-	// Step 4: Update in_stock entries with calculated values
-	// This is where we actually update the in_stock quantities in the inventory
+	// Step 3: Update in_stock entries with calculated values
 	for i := range allEntries {
 		if allEntries[i].Type == "in_stock" {
 			productUID := allEntries[i].Product.ProductID
 			if updatedStock, exists := currentStock[productUID]; exists {
-				// Clear existing color data and replace with updated values
 				allEntries[i].Product.Color = make(map[string][]int)
-
-				// Update the color quantities with calculated values
 				for color, newQuantities := range updatedStock {
-					// Copy the updated quantities to the allEntries
 					allEntries[i].Product.Color[color] = make([]int, len(newQuantities))
 					copy(allEntries[i].Product.Color[color], newQuantities)
 				}
-
 				quantity := 0
 				for _, quantities := range allEntries[i].Product.Color {
 					for _, qty := range quantities {
@@ -212,7 +162,7 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 		}
 	}
 
-	// Step 5: Add new sale entries from stockUpdate (transaction history)
+	// Step 4: Add new sale entries from stockUpdate (transaction history)
 	for _, saleEntry := range stockUpdate.SaleEntries {
 		newEntry := In_stockTshirtStruct{
 			UUID:     saleEntry.UUID,
@@ -227,7 +177,7 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 		allEntries = append(allEntries, newEntry)
 	}
 
-	// Step 6: Add new purchase entries from stockUpdate (transaction history)
+	// Step 5: Add new purchase entries from stockUpdate (transaction history)
 	for _, purchaseEntry := range stockUpdate.PurchaseEntries {
 		newEntry := In_stockTshirtStruct{
 			UUID:     purchaseEntry.UUID,
@@ -235,22 +185,22 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 			From:     purchaseEntry.From,
 			Invoice:  purchaseEntry.Invoice,
 			Date:     purchaseEntry.Date,
-			IsPaid:   false, // Default for purchases
-			Rejected: false, // Default for purchases
+			IsPaid:   false,
+			Rejected: false,
 			Product:  purchaseEntry.Product,
 		}
 		allEntries = append(allEntries, newEntry)
 	}
 
-	// Step 7: Write updated inventory back to file
+	// Step 6: Write updated inventory back to file
 	updatedData, err := json.MarshalIndent(allEntries, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal updated inventory: %w", err)
+		return fmt.Errorf("failed to marshal updated inventory: %w", err)
 	}
 
 	if err := os.WriteFile(data.InventoryFile, updatedData, 0644); err != nil {
-		return nil, fmt.Errorf("failed to write updated inventory: %w", err)
+		return fmt.Errorf("failed to write updated inventory: %w", err)
 	}
 
-	return invoiceGroupedData, nil
+	return nil
 }
