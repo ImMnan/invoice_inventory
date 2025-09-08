@@ -67,7 +67,7 @@ func (sf StockFilter) shouldShowStock(stock Stocks) bool {
 }
 
 func (sf StockFilter) shouldShowSales(stock Stocks) bool {
-	if stock.Type != "sale" {
+	if stock.Type != "sale" && stock.Type != "job_sale" {
 		return false
 	}
 

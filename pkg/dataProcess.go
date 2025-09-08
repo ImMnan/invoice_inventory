@@ -140,14 +140,14 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 				UUID:    uuid.New().String(),
 				Type:    strings.TrimSpace(row[0]),
 				Invoice: strings.TrimSpace(row[1]),
-				Date:    strings.TrimSpace(row[3]), // Date
-				From:    "vendor",                  // Default vendor since it's not in CSV
+				Date:    strings.TrimSpace(row[4]), // Date
+				From:    strings.TrimSpace(row[2]), // Default vendor since it's not in CSV
 				Product: ProductStruct{
-					ProductID: strings.TrimSpace(row[2]), // Product_Id
-					Gen:       strings.TrimSpace(row[4]), // Gen
+					ProductID: strings.TrimSpace(row[3]), // Product_Id
+					Gen:       strings.TrimSpace(row[5]), // Gen
 					Color:     colorMap,
 					Total: func() int {
-						priceInt, err := strconv.Atoi(strings.TrimSpace(row[5]))
+						priceInt, err := strconv.Atoi(strings.TrimSpace(row[6]))
 						if err != nil {
 							return 0
 						}
@@ -156,6 +156,7 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 					Quantity: quantity,
 				},
 			})
+
 		} else {
 			return nil, fmt.Errorf("invalid row type %s at row %d", row[0], i)
 		}
