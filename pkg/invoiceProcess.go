@@ -181,50 +181,6 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(invoiceGroupedData *InvoiceGr
 	return invoicesSlice, nil
 }
 
-func (data *JsLocalDB) DelProcessedInvoiceWithStockData(invoiceGroupedData *InvoiceGroupedData, product *ProductSlice) ([]string, error) {
-	var invoicesSlice []string
-
-	// Write or append to Data/invoices.json
-	filePath := data.InvoiceFile
-	var existingInvoices []Invoice
-	if _, err := os.Stat(filePath); err == nil {
-		f, err := os.Open(filePath)
-		if err == nil {
-			defer f.Close()
-			json.NewDecoder(f).Decode(&existingInvoices)
-		}
-	}
-
-	for invoiceID := range invoiceGroupedData.SalesByInvoice {
-		// Remove the invoice with the matching InvoiceID
-		found := false
-		filteredInvoices := make([]Invoice, 0, len(existingInvoices))
-		for _, inv := range existingInvoices {
-			if inv.InvoiceID == invoiceID {
-				found = true
-				invoicesSlice = append(invoicesSlice, invoiceID)
-				continue // skip this invoice
-			}
-			filteredInvoices = append(filteredInvoices, inv)
-		}
-		if !found {
-			return nil, fmt.Errorf("error: invoice %s does not exist, terminating", invoiceID)
-		}
-		existingInvoices = filteredInvoices
-	}
-	f, err := os.Create(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	enc := json.NewEncoder(f)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(existingInvoices); err != nil {
-		return nil, err
-	}
-	return invoicesSlice, nil
-}
-
 func (data *JsLocalDB) getProductData() ([]ProductStruct, error) {
 
 	productDB := data.ProductFile
