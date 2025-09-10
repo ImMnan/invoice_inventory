@@ -78,7 +78,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int) {
 	if !confirm {
 		switch {
 		case stockUpdate.SaleEntries != nil && stockUpdate.PurchaseEntries == nil:
-			fmt.Println("\n[!] Check the data correctly before processing the invoice")
+			fmt.Println("\n[!] Check the sales data correctly before processing the invoice")
 
 			saleLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(saleLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY\tTOTAL")
@@ -130,7 +130,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int) {
 			fmt.Println("\n\n\n'lvs' Copyright (C) 2025  SHRIKRISHNA TECH")
 
 		case stockUpdate.PurchaseEntries != nil && stockUpdate.SaleEntries == nil:
-			fmt.Println("\n[!] Check the data correctly before processing the invoice")
+			fmt.Println("\n[!] Check the purchase data correctly before processing the invoice")
 
 			PurchaseLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(PurchaseLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY")
@@ -238,7 +238,7 @@ func applyJobInvoice(fileName string, confirm, formatCsv bool, month int) {
 	if !confirm {
 		switch {
 		case stockUpdate.SaleEntries != nil && stockUpdate.PurchaseEntries == nil:
-			fmt.Println("\n[!] Check the data correctly before processing the invoice")
+			fmt.Println("\n[!] Check the sale data correctly before processing the invoice")
 
 			saleLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(saleLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY\tTOTAL")
@@ -290,7 +290,7 @@ func applyJobInvoice(fileName string, confirm, formatCsv bool, month int) {
 			fmt.Println("\n\n\n'lvs' Copyright (C) 2025  SHRIKRISHNA TECH")
 
 		case stockUpdate.PurchaseEntries != nil && stockUpdate.SaleEntries == nil:
-			fmt.Println("\n[!] Check the data correctly before processing the invoice")
+			fmt.Println("\n[!] Check the purchase data correctly before processing the invoice")
 
 			PurchaseLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(PurchaseLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY")

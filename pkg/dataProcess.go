@@ -115,12 +115,12 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 			quantities := make([]int, 8)
 			// Parse quantities for each size (columns 6-13)
 			for j := 0; j < 8; j++ {
-				if qty, err := strconv.Atoi(strings.TrimSpace(row[6+j])); err == nil {
+				if qty, err := strconv.Atoi(strings.TrimSpace(row[7+j])); err == nil {
 					quantities[j] = qty
 				}
 			}
 			// Color is in column 5, use it as key for the map
-			color := strings.TrimSpace(row[5])
+			color := strings.TrimSpace(row[6])
 			colorMap[color] = quantities
 			// Parse total (column 14)
 			//total := 0
@@ -130,7 +130,7 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 			//	}
 			//}
 			quantity := 0
-			if qtyStr := strings.TrimSpace(row[14]); qtyStr != "" {
+			if qtyStr := strings.TrimSpace(row[15]); qtyStr != "" {
 				if t, err := strconv.Atoi(qtyStr); err == nil {
 					quantity = t
 				}
@@ -247,16 +247,16 @@ func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 			quantities := make([]int, 8)
 			// Parse quantities for each size (columns 8-15)
 			for j := 0; j < 8; j++ {
-				if qty, err := strconv.Atoi(strings.TrimSpace(row[6+j])); err == nil {
+				if qty, err := strconv.Atoi(strings.TrimSpace(row[7+j])); err == nil {
 					quantities[j] = qty
 				}
 			}
 			// Color is in column 6, use it as key for the map
-			color := strings.TrimSpace(row[5])
+			color := strings.TrimSpace(row[6])
 			colorMap[color] = quantities
 			// Parse total (column 16)
 			total := 0
-			if totalStr := strings.TrimSpace(row[14]); totalStr != "" {
+			if totalStr := strings.TrimSpace(row[15]); totalStr != "" {
 				if t, err := strconv.Atoi(totalStr); err == nil {
 					total = t
 				}
@@ -266,10 +266,10 @@ func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 				UUID:    uuid.New().String(),
 				Type:    "purchase",
 				Invoice: row[1],
-				Date:    strings.TrimSpace(row[3]), // Date
+				Date:    strings.TrimSpace(row[4]), // Date
 				From:    strings.TrimSpace(row[2]), // Vendor ID
 				Product: ProductStruct{
-					ProductID: strings.TrimSpace(row[2]), // Product_Id
+					ProductID: strings.TrimSpace(row[3]), // Product_Id
 					Gen:       strings.TrimSpace(row[5]), // Gen
 					Color:     colorMap,
 					Total:     total,
@@ -278,6 +278,7 @@ func (manual ManualData) GetStockUpdate() (ProductSlice, error) {
 		}
 
 	}
+
 	return productData, nil
 }
 

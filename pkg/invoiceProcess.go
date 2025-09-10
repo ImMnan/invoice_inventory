@@ -63,6 +63,17 @@ func (data *JsLocalDB) Invoices() ([]byte, error) {
 func (data *JsLocalDB) ProcessInvoiceWithStockData(product *ProductSlice) ([]string, error) {
 	var invoicesSlice []string
 	gst := 5
+
+	// If any item is purchase or purchase_order, just print success and return
+	for _, item := range *product {
+		t := strings.ToLower(item.Type)
+		fmt.Println(t, "\n")
+		if t == "purchase" || t == "purchase-invoice" {
+			fmt.Println("Purchase order added successfully, please check inventory or get purchase data.")
+			continue
+		}
+	}
+
 	filePath := data.InvoiceFile
 	var existingInvoices []Invoice
 	var invoices []Invoice
@@ -74,9 +85,9 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(product *ProductSlice) ([]str
 		}
 	}
 
-	// Group products by invoice ID
 	invoiceProductMap := make(map[string][]TshirtStruct)
 	invoiceCustomerMap := make(map[string]string)
+	// Group products by invoice ID
 	for _, item := range *product {
 		invoiceProductMap[item.Invoice] = append(invoiceProductMap[item.Invoice], item)
 		if invoiceCustomerMap[item.Invoice] == "" {
@@ -91,10 +102,12 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(product *ProductSlice) ([]str
 			}
 		}
 		customerID := invoiceCustomerMap[invoiceID]
+
 		if customerID == "" {
 			fmt.Printf("Warning: No customer ID found for invoice %s, skipping...\n", invoiceID)
 			continue
 		}
+
 		customersData, err := data.getCustomerData()
 		if err != nil {
 			fmt.Println("Error fetching customer data:", err)

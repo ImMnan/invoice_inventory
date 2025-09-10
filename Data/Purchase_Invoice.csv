@@ -1,3 +1,9 @@
-Type, Invoice, From, Product_Id, Date, Gen, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Quantity
-purchase-invoice, Behrarji, 19, CO180G-RG, 8/3/2025, Male, Red, ,1,1,1,1,1,,, 5
-purchase-invoice, Behrarji, 19, CO240G-RL, 8/3/2025, Male, Red, ,1,1,1,1,1,,, 5
+Type, Invoice,from, Product_Id, Date, Gen, Color, XS, S, M, L, XL, 2XL, 3XL, 4XL, Quantity
+purchase-invoice,V 934,behariji, CO180G-RG, 9/4/2025, Male,white, ,,40,35,40,10,,,125
+purchase-invoice,V 934,behariji, CO180G-RG, 9/4/2025, Male,black, ,,20,30,35,25,,,110
+purchase-invoice,V 934,behariji, CO180G-RG, 9/4/2025, Male,navy_blue,,,10,10,5,10,,,35
+purchase-invoice,V 934,behariji, CO180G-RG, 9/4/2025, Male,red,,,5,10,10,15,,,40
+purchase-invoice,V 934,behariji, CO180G-RG, 9/4/2025, Male,red,,,20,10,5,,,,35
+purchase-invoice,V 934,behariji, CO180G-RG, 9/4/2025, Male,salmon_pink,,,,5,,,,,5
+purchase-invoice,V 934,behariji, CO180G-RG, 9/4/2025, Male,sage_green,,,,5,,,,,5
+purchase-invoice,V 934,behariji, CO180G-RG, 9/4/2025, Male,sky_blue,,,,5,,,,,5
