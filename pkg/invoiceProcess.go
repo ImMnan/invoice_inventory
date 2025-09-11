@@ -64,13 +64,12 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(product *ProductSlice) ([]str
 	var invoicesSlice []string
 	gst := 5
 
-	// If any item is purchase or purchase_order, just print success and return
+	// If any item is purchase or purchase-invoice, print success once and exit
 	for _, item := range *product {
 		t := strings.ToLower(item.Type)
-		fmt.Println(t, "\n")
 		if t == "purchase" || t == "purchase-invoice" {
 			fmt.Println("Purchase order added successfully, please check inventory or get purchase data.")
-			continue
+			return nil, nil
 		}
 	}
 
@@ -104,6 +103,14 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(product *ProductSlice) ([]str
 		customerID := invoiceCustomerMap[invoiceID]
 
 		if customerID == "" {
+			// Only skip with no warning if purchase type
+			t := ""
+			if len(filteredProducts) > 0 {
+				t = strings.ToLower(filteredProducts[0].Type)
+			}
+			if t == "purchase" || t == "purchase-invoice" {
+				continue
+			}
 			fmt.Printf("Warning: No customer ID found for invoice %s, skipping...\n", invoiceID)
 			continue
 		}
