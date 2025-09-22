@@ -142,28 +142,30 @@ func (data *JsLocalDB) ProcessInvoiceWithStockData(product *ProductSlice) ([]str
 			productMap[product.ProductID] = product
 		}
 		for _, item := range filteredProducts {
-			for color, quantities := range item.Product.Color {
-				quantity := 0
-				for _, qty := range quantities {
-					quantity += qty
+			for _, prod := range item.Product {
+				for color, quantities := range prod.Color {
+					quantity := 0
+					for _, qty := range quantities {
+						quantity += qty
+					}
+					productInfo, exists := productMap[prod.ProductID]
+					if !exists {
+						return nil, fmt.Errorf("error: Product ID %s not found in products.json", prod.ProductID)
+					}
+					amount := int(prod.Price) * quantity
+					totalAmount += amount
+					invoiceProducts = append(invoiceProducts, ProductStruct{
+						ProductID: prod.ProductID,
+						Name:      productInfo.Name,
+						Print:     prod.Print,
+						Gen:       productInfo.Gen,
+						GST:       gst,
+						Color:     map[string][]int{color: quantities},
+						Quantity:  quantity,
+						Total:     amount,
+						Price:     int(prod.Price),
+					})
 				}
-				productInfo, exists := productMap[item.Product.ProductID]
-				if !exists {
-					return nil, fmt.Errorf("error: Product ID %s not found in products.json", item.Product.ProductID)
-				}
-				amount := int(item.Product.Price) * quantity
-				totalAmount += amount
-				invoiceProducts = append(invoiceProducts, ProductStruct{
-					ProductID: item.Product.ProductID,
-					Name:      productInfo.Name,
-					Print:     item.Product.Print,
-					Gen:       productInfo.Gen,
-					GST:       gst,
-					Color:     map[string][]int{color: quantities},
-					Quantity:  quantity,
-					Total:     amount,
-					Price:     int(item.Product.Price),
-				})
 			}
 		}
 		totalTax := 5 * totalAmount / 100

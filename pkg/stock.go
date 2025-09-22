@@ -141,23 +141,25 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 		return fmt.Errorf("failed to calculate stock updates: %w", err)
 	}
 
-	// Step 3: Update in_stock entries with calculated values
+	// Step 3: Update in_stock entries with calculated values (handle Product as a slice)
 	for i := range allEntries {
 		if allEntries[i].Type == "in_stock" {
-			productUID := allEntries[i].Product.ProductID
-			if updatedStock, exists := currentStock[productUID]; exists {
-				allEntries[i].Product.Color = make(map[string][]int)
-				for color, newQuantities := range updatedStock {
-					allEntries[i].Product.Color[color] = make([]int, len(newQuantities))
-					copy(allEntries[i].Product.Color[color], newQuantities)
-				}
-				quantity := 0
-				for _, quantities := range allEntries[i].Product.Color {
-					for _, qty := range quantities {
-						quantity += qty
+			for j := range allEntries[i].Product {
+				productUID := allEntries[i].Product[j].ProductID
+				if updatedStock, exists := currentStock[productUID]; exists {
+					allEntries[i].Product[j].Color = make(map[string][]int)
+					for color, newQuantities := range updatedStock {
+						allEntries[i].Product[j].Color[color] = make([]int, len(newQuantities))
+						copy(allEntries[i].Product[j].Color[color], newQuantities)
 					}
+					quantity := 0
+					for _, quantities := range allEntries[i].Product[j].Color {
+						for _, qty := range quantities {
+							quantity += qty
+						}
+					}
+					allEntries[i].Product[j].Quantity = quantity
 				}
-				allEntries[i].Product.Quantity = quantity
 			}
 		}
 	}
@@ -192,8 +194,27 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 		allEntries = append(allEntries, newEntry)
 	}
 
-	// Step 6: Write updated inventory back to file
-	updatedData, err := json.MarshalIndent(allEntries, "", "  ")
+	// Step 6: Group entries by invoice and write updated inventory back to file
+	grouped := make(map[string]*In_stockTshirtStruct)
+
+	for _, entry := range allEntries {
+		key := entry.Invoice + "|" + entry.Type + "|" + entry.Date
+		if group, ok := grouped[key]; ok {
+			group.Product = append(group.Product, entry.Product...)
+		} else {
+			// Copy entry, but ensure Product is a slice
+			newEntry := entry
+			newEntry.Product = append([]ProductStruct{}, entry.Product...)
+			grouped[key] = &newEntry
+		}
+	}
+
+	var groupedEntries []In_stockTshirtStruct
+	for _, v := range grouped {
+		groupedEntries = append(groupedEntries, *v)
+	}
+
+	updatedData, err := json.MarshalIndent(groupedEntries, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal updated inventory: %w", err)
 	}
