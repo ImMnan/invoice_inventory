@@ -94,32 +94,33 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int) {
 				var qtyTotal int
 				var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
 				for _, item := range items {
-					p := item.Product
-					for color, quantities := range p.Color {
-						line := fmt.Sprintf("%s\t%s\t%s\t%s",
-							p.ProductID,
-							invoiceId,
-							p.Print,
-							color,
-						)
-						// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
-						padded := make([]int, 8)
-						copy(padded, quantities)
-						xsTotal += padded[0]
-						sTotal += padded[1]
-						mTotal += padded[2]
-						lTotal += padded[3]
-						xlTotal += padded[4]
-						x2Total += padded[5]
-						x3Total += padded[6]
-						x4Total += padded[7]
-						for _, q := range padded {
-							line += fmt.Sprintf("\t%d", q)
+					for _, p := range item.Product {
+						for color, quantities := range p.Color {
+							line := fmt.Sprintf("%s\t%s\t%s\t%s",
+								p.ProductID,
+								invoiceId,
+								p.Print,
+								color,
+							)
+							// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
+							padded := make([]int, 8)
+							copy(padded, quantities)
+							xsTotal += padded[0]
+							sTotal += padded[1]
+							mTotal += padded[2]
+							lTotal += padded[3]
+							xlTotal += padded[4]
+							x2Total += padded[5]
+							x3Total += padded[6]
+							x4Total += padded[7]
+							for _, q := range padded {
+								line += fmt.Sprintf("\t%d", q)
+							}
+							line += fmt.Sprintf("\t%d\t%d", p.Quantity, p.Total)
+							fmt.Fprintln(saleLint, line)
+							total += p.Total
+							qtyTotal += p.Quantity
 						}
-						line += fmt.Sprintf("\t%d\t%d", p.Quantity, p.Total)
-						fmt.Fprintln(saleLint, line)
-						total += p.Total
-						qtyTotal += p.Quantity
 					}
 				}
 				fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
@@ -145,31 +146,32 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int) {
 				var qtyTotal int
 				var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
 				for _, item := range items {
-					p := item.Product
-					for color, quantities := range p.Color {
-						line := fmt.Sprintf("%s\t%s\t%s\t%s",
-							p.ProductID,
-							invoiceId,
-							p.Print,
-							color,
-						)
-						// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
-						padded := make([]int, 8)
-						copy(padded, quantities)
-						xsTotal += padded[0]
-						sTotal += padded[1]
-						mTotal += padded[2]
-						lTotal += padded[3]
-						xlTotal += padded[4]
-						x2Total += padded[5]
-						x3Total += padded[6]
-						x4Total += padded[7]
-						for _, q := range padded {
-							line += fmt.Sprintf("\t%d", q)
+					for _, p := range item.Product {
+						for color, quantities := range p.Color {
+							line := fmt.Sprintf("%s\t%s\t%s\t%s",
+								p.ProductID,
+								invoiceId,
+								p.Print,
+								color,
+							)
+							// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
+							padded := make([]int, 8)
+							copy(padded, quantities)
+							xsTotal += padded[0]
+							sTotal += padded[1]
+							mTotal += padded[2]
+							lTotal += padded[3]
+							xlTotal += padded[4]
+							x2Total += padded[5]
+							x3Total += padded[6]
+							x4Total += padded[7]
+							for _, q := range padded {
+								line += fmt.Sprintf("\t%d", q)
+							}
+							line += fmt.Sprintf("\t%d", p.Quantity)
+							fmt.Fprintln(PurchaseLint, line)
+							qtyTotal += p.Quantity
 						}
-						line += fmt.Sprintf("\t%d", p.Quantity)
-						fmt.Fprintln(PurchaseLint, line)
-						qtyTotal += p.Quantity
 					}
 				}
 				fmt.Fprintln(PurchaseLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t---")
@@ -254,32 +256,33 @@ func applyJobInvoice(fileName string, confirm, formatCsv bool, month int) {
 				var qtyTotal int
 				var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
 				for _, item := range items {
-					p := item.Product
-					for color, quantities := range p.Color {
-						line := fmt.Sprintf("%s\t%s\t%s\t%s",
-							p.ProductID,
-							invoiceId,
-							p.Print,
-							color,
-						)
-						// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
-						padded := make([]int, 8)
-						copy(padded, quantities)
-						xsTotal += padded[0]
-						sTotal += padded[1]
-						mTotal += padded[2]
-						lTotal += padded[3]
-						xlTotal += padded[4]
-						x2Total += padded[5]
-						x3Total += padded[6]
-						x4Total += padded[7]
-						for _, q := range padded {
-							line += fmt.Sprintf("\t%d", q)
+					for _, p := range item.Product {
+						for color, quantities := range p.Color {
+							line := fmt.Sprintf("%s\t%s\t%s\t%s",
+								p.ProductID,
+								invoiceId,
+								p.Print,
+								color,
+							)
+							// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
+							padded := make([]int, 8)
+							copy(padded, quantities)
+							xsTotal += padded[0]
+							sTotal += padded[1]
+							mTotal += padded[2]
+							lTotal += padded[3]
+							xlTotal += padded[4]
+							x2Total += padded[5]
+							x3Total += padded[6]
+							x4Total += padded[7]
+							for _, q := range padded {
+								line += fmt.Sprintf("\t%d", q)
+							}
+							line += fmt.Sprintf("\t%d\t%d", p.Quantity, p.Total)
+							fmt.Fprintln(saleLint, line)
+							total += p.Total
+							qtyTotal += p.Quantity
 						}
-						line += fmt.Sprintf("\t%d\t%d", p.Quantity, p.Total)
-						fmt.Fprintln(saleLint, line)
-						total += p.Total
-						qtyTotal += p.Quantity
 					}
 				}
 				fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
@@ -305,31 +308,32 @@ func applyJobInvoice(fileName string, confirm, formatCsv bool, month int) {
 				var qtyTotal int
 				var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
 				for _, item := range items {
-					p := item.Product
-					for color, quantities := range p.Color {
-						line := fmt.Sprintf("%s\t%s\t%s\t%s",
-							p.ProductID,
-							invoiceId,
-							p.Print,
-							color,
-						)
-						// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
-						padded := make([]int, 8)
-						copy(padded, quantities)
-						xsTotal += padded[0]
-						sTotal += padded[1]
-						mTotal += padded[2]
-						lTotal += padded[3]
-						xlTotal += padded[4]
-						x2Total += padded[5]
-						x3Total += padded[6]
-						x4Total += padded[7]
-						for _, q := range padded {
-							line += fmt.Sprintf("\t%d", q)
+					for _, p := range item.Product {
+						for color, quantities := range p.Color {
+							line := fmt.Sprintf("%s\t%s\t%s\t%s",
+								p.ProductID,
+								invoiceId,
+								p.Print,
+								color,
+							)
+							// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
+							padded := make([]int, 8)
+							copy(padded, quantities)
+							xsTotal += padded[0]
+							sTotal += padded[1]
+							mTotal += padded[2]
+							lTotal += padded[3]
+							xlTotal += padded[4]
+							x2Total += padded[5]
+							x3Total += padded[6]
+							x4Total += padded[7]
+							for _, q := range padded {
+								line += fmt.Sprintf("\t%d", q)
+							}
+							line += fmt.Sprintf("\t%d", p.Quantity)
+							fmt.Fprintln(PurchaseLint, line)
+							qtyTotal += p.Quantity
 						}
-						line += fmt.Sprintf("\t%d", p.Quantity)
-						fmt.Fprintln(PurchaseLint, line)
-						qtyTotal += p.Quantity
 					}
 				}
 				fmt.Fprintln(PurchaseLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t---")

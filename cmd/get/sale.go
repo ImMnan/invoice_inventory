@@ -89,18 +89,18 @@ func printSales(productID, colorFlag string, printedFlag bool, month int) {
 		if !filter.shouldShowSales(stock) {
 			continue
 		}
-		if !filter.shouldShowPrinted(stock) {
-			continue
-		}
-		// Iterate through each color for this stock item
-		for colorName, sizeArray := range stock.Product.Color {
-			if !filter.shouldShowColor(colorName) {
-				continue
-			}
+		// Iterate through each product in the stock item
+		for _, product := range stock.Product {
+			// Iterate through each color for this product
+			for colorName, sizeArray := range product.Color {
+				if !filter.shouldShowColor(colorName) {
+					continue
+				}
 
-			sizes := prepareSizes(sizeArray)
-			total := calculateTotal(sizes)
-			printStockRow(tabWriter, stock, colorName, sizes, total)
+				sizes := prepareSizes(sizeArray)
+				total := calculateTotal(sizes)
+				printStockRow(tabWriter, stock, product, colorName, sizes, total)
+			}
 		}
 	}
 }
