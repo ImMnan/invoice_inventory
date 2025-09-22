@@ -6,7 +6,8 @@
     "date": "2025-07-22",
     "isPaid": false,
     "rejected": false,
-    "product": {
+    "product": [ 
+      {
       "product_id": "CO240G-RL",
       "name": "Cotton Relaxed-fit T-Shirt",
       "print": "",
@@ -49,6 +50,7 @@
       "description": "",
       "quantity": 0
     }
+  ]
   },
   {
     "uuid": "1008",
@@ -57,7 +59,8 @@
     "date": "2025-07-22",
     "isPaid": false,
     "rejected": false,
-    "product": {
+    "product": [ 
+      {
       "product_id": "CO180G-RG",
       "name": "Cotton Regular-fit T-Shirt",
       "print": "",
@@ -210,37 +213,6 @@
       "description": "",
       "quantity": 1431
     }
-  },
-  {
-    "uuid": "3fe65d42-c4e5-4762-883a-17c8132e9a5d",
-    "type": "sale",
-    "for": "SK00",
-    "invoice": "SK25CPQ10101",
-    "date": "8/27/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO180G-RG",
-      "name": "",
-      "print": "Moriya",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "navi_blue": [
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          0
-        ]
-      },
-      "total": 250,
-      "price": 0,
-      "description": "",
-      "quantity": 1
-    }
+  ]
   }
 ]
