@@ -6,7 +6,8 @@
     "date": "2025-07-22",
     "isPaid": false,
     "rejected": false,
-    "product": {
+    "product": [
+      {
       "product_id": "CO240G-RL",
       "name": "Cotton Relaxed-fit T-Shirt",
       "print": "",
@@ -15,31 +16,31 @@
       "color": {
         "black": [
           0,
-          9,
-          9,
-          9,
-          9,
-          9,
+          0,
+          0,
+          0,
+          0,
+          0,
           0,
           0
         ],
         "red": [
           0,
-          8,
-          8,
-          8,
-          8,
-          8,
+          0,
+          0,
+          0,
+          0,
+          0,
           0,
           0
         ],
         "white": [
           0,
-          8,
-          8,
-          8,
-          8,
-          8,
+          0,
+          0,
+          0,
+          0,
+          0,
           0,
           0
         ]
@@ -47,8 +48,9 @@
       "total": 150,
       "price": 200,
       "description": "",
-      "quantity": 125
+      "quantity": 0
     }
+  ]
   },
   {
     "uuid": "1008",
@@ -57,7 +59,8 @@
     "date": "2025-07-22",
     "isPaid": false,
     "rejected": false,
-    "product": {
+    "product": [ 
+      {
       "product_id": "CO180G-RG",
       "name": "Cotton Regular-fit T-Shirt",
       "print": "",
@@ -66,327 +69,150 @@
       "color": {
         "black": [
           0,
-          8,
-          8,
-          8,
-          8,
-          8,
+          0,
+          3,
+          5,
+          15,
+          27,
+          0,
+          0
+        ],
+        "lavender": [
+          0,
+          0,
+          26,
+          24,
+          27,
+          28,
+          0,
+          0
+        ],
+        "mint_green": [
+          0,
+          0,
+          31,
+          29,
+          29,
+          29,
+          0,
+          0
+        ],
+        "navy_blue": [
+          0,
+          0,
+          21,
+          17,
+          25,
+          26,
+          0,
+          0
+        ],
+        "olive_green": [
+          0,
+          0,
+          26,
+          26,
+          35,
+          31,
+          0,
+          0
+        ],
+        "orange": [
+          0,
+          0,
+          28,
+          29,
+          28,
+          28,
           0,
           0
         ],
         "red": [
           0,
-          8,
-          8,
-          8,
-          8,
-          8,
+          0,
+          18,
+          15,
+          20,
+          25,
+          0,
+          0
+        ],
+        "royal_blue": [
+          0,
+          0,
+          28,
+          24,
+          27,
+          30,
+          0,
+          0
+        ],
+        "sage_green": [
+          0,
+          0,
+          28,
+          21,
+          29,
+          31,
+          0,
+          0
+        ],
+        "salmon_pink": [
+          0,
+          0,
+          28,
+          21,
+          26,
+          31,
+          0,
+          0
+        ],
+        "sky_blue": [
+          0,
+          0,
+          25,
+          22,
+          28,
+          27,
+          0,
+          0
+        ],
+        "teal_blue": [
+          0,
+          0,
+          31,
+          28,
+          39,
+          30,
           0,
           0
         ],
         "white": [
           0,
-          8,
-          8,
-          8,
-          8,
-          8,
+          0,
+          18,
+          17,
+          25,
+          28,
+          0,
+          0
+        ],
+        "yellow": [
+          0,
+          0,
+          32,
+          31,
+          28,
+          27,
           0,
           0
         ]
       },
-      "total": 150,
+      "total": 1423,
       "price": 200,
       "description": "",
-      "quantity": 120
+      "quantity": 1431
     }
-  },
-  {
-    "uuid": "7440e383-bf37-4b69-82c8-b785ae2155b0",
-    "type": "sale",
-    "for": "SK21-001",
-    "invoice": "14",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO180G-RG",
-      "name": "",
-      "print": "Hades",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "white": [
-          0,
-          1,
-          1,
-          1,
-          1,
-          1,
-          0,
-          0
-        ]
-      },
-      "total": 1000,
-      "price": 0,
-      "description": "",
-      "quantity": 5
-    }
-  },
-  {
-    "uuid": "b853816c-917f-4bb1-80f6-87e5d1cff4e3",
-    "type": "sale",
-    "for": "SK21-001",
-    "invoice": "14",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO180G-RG",
-      "name": "",
-      "print": "Hades",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "red": [
-          0,
-          1,
-          1,
-          1,
-          1,
-          1,
-          0,
-          0
-        ]
-      },
-      "total": 1000,
-      "price": 0,
-      "description": "",
-      "quantity": 5
-    }
-  },
-  {
-    "uuid": "8d61c8e6-2c0c-4ccf-9461-8a6a5903da35",
-    "type": "sale",
-    "for": "SK21-001",
-    "invoice": "14",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO180G-RG",
-      "name": "",
-      "print": "Hades",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "black": [
-          0,
-          1,
-          1,
-          1,
-          1,
-          1,
-          0,
-          0
-        ]
-      },
-      "total": 1000,
-      "price": 0,
-      "description": "",
-      "quantity": 5
-    }
-  },
-  {
-    "uuid": "9902d7b9-ec01-44ab-af09-36ea72711d5d",
-    "type": "sale",
-    "for": "SK21-002",
-    "invoice": "15",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO240G-RL",
-      "name": "",
-      "print": "Ninja",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "white": [
-          0,
-          2,
-          2,
-          2,
-          2,
-          2,
-          0,
-          0
-        ]
-      },
-      "total": 1500,
-      "price": 0,
-      "description": "",
-      "quantity": 5
-    }
-  },
-  {
-    "uuid": "e478b4b5-43fc-4735-9164-b753a61fa194",
-    "type": "sale",
-    "for": "SK21-001",
-    "invoice": "14",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO180G-RG",
-      "name": "",
-      "print": "Goku",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "white": [
-          0,
-          1,
-          1,
-          1,
-          1,
-          1,
-          0,
-          0
-        ]
-      },
-      "total": 1000,
-      "price": 0,
-      "description": "",
-      "quantity": 5
-    }
-  },
-  {
-    "uuid": "88bb7378-096a-40f3-9186-3763dabfc3dd",
-    "type": "sale",
-    "for": "SK21-001",
-    "invoice": "14",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO180G-RG",
-      "name": "",
-      "print": "Goku",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "red": [
-          0,
-          1,
-          1,
-          1,
-          1,
-          1,
-          0,
-          0
-        ]
-      },
-      "total": 1000,
-      "price": 0,
-      "description": "",
-      "quantity": 5
-    }
-  },
-  {
-    "uuid": "bc50f464-9a64-40fd-b867-20ae679543c3",
-    "type": "sale",
-    "for": "SK21-001",
-    "invoice": "14",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO180G-RG",
-      "name": "",
-      "print": "Goku",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "black": [
-          0,
-          1,
-          1,
-          1,
-          1,
-          1,
-          0,
-          0
-        ]
-      },
-      "total": 1000,
-      "price": 0,
-      "description": "",
-      "quantity": 5
-    }
-  },
-  {
-    "uuid": "9f377660-699e-4673-b42e-9df743693fbf",
-    "type": "sale",
-    "for": "SK21-001",
-    "invoice": "14",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO240G-RL",
-      "name": "",
-      "print": "Ninja",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "black": [
-          0,
-          1,
-          1,
-          1,
-          1,
-          1,
-          0,
-          0
-        ]
-      },
-      "total": 1500,
-      "price": 0,
-      "description": "",
-      "quantity": 5
-    }
-  },
-  {
-    "uuid": "06de2ec6-01b3-4034-ac5b-98074e415a4a",
-    "type": "sale",
-    "for": "SK21-002",
-    "invoice": "15",
-    "date": "8/3/2025",
-    "isPaid": false,
-    "rejected": false,
-    "product": {
-      "product_id": "CO240G-RL",
-      "name": "",
-      "print": "Hello",
-      "gen": "Male",
-      "gst": 0,
-      "color": {
-        "red": [
-          0,
-          2,
-          2,
-          2,
-          2,
-          2,
-          0,
-          0
-        ]
-      },
-      "total": 1500,
-      "price": 0,
-      "description": "",
-      "quantity": 5
-    }
+  ]
   }
 ]

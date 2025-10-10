@@ -79,20 +79,30 @@ func getInvoices(formatCsv bool, month int) {
 
 	if !formatCsv {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(invWr, "INVOICE\tFOR\tTYPE\tAMOUNT\tDATE\tIS PAID")
+		fmt.Fprintln(invWr, "INVOICE\tFOR\tTYPE\tQTY\tAMOUNT\tDATE\tIS PAID")
 		for _, invoice := range invoices {
 			if invoice.InvoiceID != "" || invoice.Type != "NA" {
-				fmt.Fprintf(invWr, "%s\t%s\t%s\t%d\t%s\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, invoice.Amount, invoice.Date, invoice.IsPaid)
+				// Calculate total quantity for this invoice
+				var totalQty int
+				for _, product := range invoice.Product {
+					totalQty += product.Quantity
+				}
+				fmt.Fprintf(invWr, "%s\t%s\t%s\t%d\t%d\t%s\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
 			}
 		}
 		invWr.Flush()
 	}
 	if formatCsv {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(invWr, "INVOICE,\tFOR,\tTYPE,\tAMOUNT,\tDATE,\tIS PAID")
+		fmt.Fprintln(invWr, "INVOICE,\tFOR,\tTYPE,\tQTY,\tAMOUNT,\tDATE,\tIS PAID")
 		for _, invoice := range invoices {
 			if invoice.InvoiceID != "" || invoice.Type != "NA" {
-				fmt.Fprintf(invWr, "%s,\t%s,\t%s,\t%d,\t%s,\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, invoice.Amount, invoice.Date, invoice.IsPaid)
+				// Calculate total quantity for this invoice
+				var totalQty int
+				for _, product := range invoice.Product {
+					totalQty += product.Quantity
+				}
+				fmt.Fprintf(invWr, "%s,\t%s,\t%s,\t%d,\t%d,\t%s,\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
 			}
 		}
 		invWr.Flush()
@@ -167,7 +177,7 @@ func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 
 				switch formatCsv {
 				case false:
-					fmt.Println("\n\nFROM: SHIRIKRISHNA TECH\nGST: 1234567890\nCOO: INDIA\nCONTACT: 9725359497\n---")
+					fmt.Println("\n\nFROM: SHIRIKRISHNA TECH\nGST: 24ERKPP7790D1ZC\nCOO: INDIA\nCONTACT: 9725359497\n---")
 					fmt.Printf("\nTYPE: %s,\nINVOICE: %s,\nNAME: %s,\nADDRESS: %s,\nGST NUMBER: %s,\nDATE: %s\n\n",
 						invoice.Type,
 						invoice.InvoiceID,

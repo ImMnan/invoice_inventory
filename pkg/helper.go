@@ -1,27 +1,27 @@
 package pkg
 
 type In_stockTshirtStruct struct {
-	UUID     string        `json:"uuid"`
-	Type     string        `json:"type"`
-	For      string        `json:"for,omitempty"`
-	From     string        `json:"from,omitempty"`
-	Invoice  string        `json:"invoice"`
-	Date     string        `json:"date,omitempty"`
-	IsPaid   bool          `json:"isPaid"`
-	Rejected bool          `json:"rejected"`
-	Product  ProductStruct `json:"product"`
+	UUID     string          `json:"uuid"`
+	Type     string          `json:"type"`
+	For      string          `json:"for,omitempty"`
+	From     string          `json:"from,omitempty"`
+	Invoice  string          `json:"invoice"`
+	Date     string          `json:"date,omitempty"`
+	IsPaid   bool            `json:"isPaid"`
+	Rejected bool            `json:"rejected"`
+	Product  []ProductStruct `json:"product"`
 }
 
 type TshirtStruct struct {
-	UUID     string        `json:"uuid"`
-	Type     string        `json:"type"`
-	For      string        `json:"for,omitempty"`
-	From     string        `json:"from,omitempty"`
-	Invoice  string        `json:"invoice"`
-	Date     string        `json:"date,omitempty"`
-	IsPaid   bool          `json:"isPaid"`
-	Rejected bool          `json:"rejected"`
-	Product  ProductStruct `json:"product"`
+	UUID     string          `json:"uuid"`
+	Type     string          `json:"type"`
+	For      string          `json:"for,omitempty"`
+	From     string          `json:"from,omitempty"`
+	Invoice  string          `json:"invoice"`
+	Date     string          `json:"date,omitempty"`
+	IsPaid   bool            `json:"isPaid"`
+	Rejected bool            `json:"rejected"`
+	Product  []ProductStruct `json:"product"`
 }
 
 type ProductStruct struct {
@@ -41,6 +41,7 @@ type ProductSlice []TshirtStruct
 
 type Proforma = TshirtStruct
 type Purchase = TshirtStruct
+type Jobwork = TshirtStruct
 
 //type ProformaSlice []TshirtStruct
 //type PurchaseSlice []TshirtStruct

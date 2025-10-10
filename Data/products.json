@@ -17,5 +17,14 @@
             "red": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"]
         },
         "description": "A comfortable and stylish t-shirt made from 100% cotton, perfect for everyday wear."
+    },
+        {
+        "product_id": "JOB_DTF",
+        "name": "DTF Printing Job for Tshirts",
+        "colors": {
+            "black": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"],
+            "red": ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"]
+        },
+        "description": "A comfortable and stylish t-shirt made from 100% cotton, perfect for everyday wear."
     }
 ]

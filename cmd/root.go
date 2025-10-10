@@ -97,7 +97,7 @@ func printLicense() {
 }
 
 func versionInfo() {
-	fmt.Printf("\n     version: %s\n", "0.1.1-alpha\n")
+	fmt.Printf("\n     version: %s\n", "0.2.0-alpha\n")
 	fmt.Println(`    'lvs'  Copyright (C) 2025  SHRIKRISHNA TECH
     This program comes with ABSOLUTELY NO WARRANTY; for details type.
     This is free software, and you are welcome to redistribute it

@@ -13,8 +13,8 @@ lvs get product <product_id>
 ```
 
 ```sh
-lvs apply -f <file_name> 
-lvs apply -f <file_name> --approve 
+lvs apply -f <file_path> 
+lvs apply -f <file_path> --approve 
 ```
 
 ```sh
