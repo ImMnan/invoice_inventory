@@ -59,29 +59,6 @@ func (product *ProductSlice) addProforma() (map[string]map[string][]int, []Profo
 						copy(stockUpdates[prod.ProductID][colorKey], quantities)
 					}
 				}
-			} else if productItem.Type != "proforma" && productItem.Type != "purchase-invoice" && productItem.Type == "job" {
-				saleEntry := Proforma{
-					UUID:     uuid.New().String(),
-					Type:     "job_sale",
-					For:      productItem.For,
-					Invoice:  productItem.Invoice,
-					Date:     productItem.Date,
-					IsPaid:   false,
-					Rejected: false,
-					Product: []ProductStruct{{
-						ProductID: prod.ProductID,
-						Print:     prod.Print,
-						Gen:       prod.Gen,
-						GST:       prod.GST,
-						Color:     make(map[string][]int),
-						Quantity:  prod.Quantity,
-						Total:     prod.Total,
-					}},
-				}
-				for color, quantities := range prod.Color {
-					saleEntry.Product[0].Color[strings.ToLower(color)] = quantities
-				}
-				saleEntries = append(saleEntries, saleEntry)
 			}
 		}
 	}
