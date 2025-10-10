@@ -85,6 +85,11 @@ func printSales(productID, colorFlag string, printedFlag bool, month int) {
 		Printed:   printedFlag,
 	}
 
+	// Initialize totals for sum calculations
+	var grandTotal int
+	var qtyTotal int
+	var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
+
 	for _, stock := range stocks {
 		if !filter.shouldShowSales(stock) {
 			continue
@@ -96,11 +101,27 @@ func printSales(productID, colorFlag string, printedFlag bool, month int) {
 				if !filter.shouldShowColor(colorName) {
 					continue
 				}
-
 				sizes := prepareSizes(sizeArray)
 				total := calculateTotal(sizes)
 				printStockRow(tabWriter, stock, product, colorName, sizes, total)
+
+				// Add to totals
+				xsTotal += sizes[0]
+				sTotal += sizes[1]
+				mTotal += sizes[2]
+				lTotal += sizes[3]
+				xlTotal += sizes[4]
+				x2Total += sizes[5]
+				x3Total += sizes[6]
+				x4Total += sizes[7]
+				grandTotal += total
 			}
+			// Add quantity total for each product
+			qtyTotal += product.Quantity
 		}
 	}
+
+	// Print totals footer
+	fmt.Fprintln(tabWriter, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
+	fmt.Fprintf(tabWriter, "FINAL\t\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, grandTotal)
 }
