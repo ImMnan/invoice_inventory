@@ -21,14 +21,15 @@ var ApplyCmd = &cobra.Command{
 		formatCsv, _ := cmd.Flags().GetBool("csv")
 		month, _ := cmd.Flags().GetInt("month")
 		job, _ := cmd.Flags().GetBool("job")
+		colorFilter, _ := cmd.Flags().GetString("color")
 		if err != nil {
 			// Handle error
 			return
 		}
 		if file != "" && !job {
-			applyStkInvoice(file, approve, formatCsv, month)
+			applyStkInvoice(file, approve, formatCsv, month, colorFilter)
 		} else if file != "" && job {
-			applyJobInvoice(file, approve, formatCsv, month)
+			applyJobInvoice(file, approve, formatCsv, month, colorFilter)
 		} else {
 			cmd.Help()
 		}
@@ -38,14 +39,15 @@ var ApplyCmd = &cobra.Command{
 func init() {
 	ApplyCmd.Flags().StringP("file", "f", "", "File to apply changes from")
 	ApplyCmd.Flags().Bool("approve", false, "[!] Approve the changes")
-	ApplyCmd.Flags().BoolP("csv", "c", false, "Output in CSV format")
+	ApplyCmd.Flags().Bool("csv", false, "Output in CSV format")
 	ApplyCmd.Flags().IntP("month", "m", 0, "Month to apply changes for")
 	ApplyCmd.Flags().BoolP("job", "j", false, "Apply job invoice, no stock deduction")
+	ApplyCmd.Flags().StringP("color", "c", "", "Filter by color (shows count without --approve)")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 
-func applyStkInvoice(fileName string, confirm, formatCsv bool, month int) {
+func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorFilter string) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(month)
 	if err != nil {
@@ -78,7 +80,11 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int) {
 	if !confirm {
 		switch {
 		case stockUpdate.SaleEntries != nil && stockUpdate.PurchaseEntries == nil:
-			fmt.Println("\n[!] Check the sales data correctly before processing the invoice")
+			if colorFilter != "" {
+				fmt.Printf("\n[!] Filtering by color: %s\n", colorFilter)
+			} else {
+				fmt.Println("\n[!] Check the sales data correctly before processing the invoice")
+			}
 
 			saleLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			fmt.Fprintln(saleLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY\tTOTAL")
@@ -89,13 +95,25 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int) {
 				invoiceGroups[item.Invoice] = append(invoiceGroups[item.Invoice], item)
 			}
 
+			var grandTotal, grandQty int
+			var grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X int
+			matchedInvoices := 0
+
 			for invoiceId, items := range invoiceGroups {
 				var total int
 				var qtyTotal int
 				var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
+				invoiceHasColor := false
+
 				for _, item := range items {
 					for _, p := range item.Product {
 						for color, quantities := range p.Color {
+							// Apply color filter if specified
+							if colorFilter != "" && color != colorFilter {
+								continue
+							}
+							invoiceHasColor = true
+
 							line := fmt.Sprintf("%s\t%s\t%s\t%s",
 								p.ProductID,
 								invoiceId,
@@ -123,10 +141,36 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int) {
 						}
 					}
 				}
-				fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
-				fmt.Fprintf(saleLint, "FINAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal, total)
+
+				if invoiceHasColor || colorFilter == "" {
+					if invoiceHasColor {
+						matchedInvoices++
+					}
+					fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
+					fmt.Fprintf(saleLint, "INVOICE TOTAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal, total)
+
+					grandTotal += total
+					grandQty += qtyTotal
+					grandXS += xsTotal
+					grandS += sTotal
+					grandM += mTotal
+					grandL += lTotal
+					grandXL += xlTotal
+					grand2X += x2Total
+					grand3X += x3Total
+					grand4X += x4Total
+				}
 			}
+
+			fmt.Fprintln(saleLint, "==========\t=====\t=====\t=====\t==\t==\t==\t==\t==\t==\t==\t==\t==\t====")
+			fmt.Fprintf(saleLint, "GRAND TOTAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X, grandQty, grandTotal)
 			saleLint.Flush()
+
+			if colorFilter != "" {
+				fmt.Printf("\n[*] Found %d invoices with color '%s'\n", matchedInvoices, colorFilter)
+				fmt.Printf("[*] Total quantity for color '%s': %d pieces\n", colorFilter, grandQty)
+				fmt.Printf("[*] Total amount for color '%s': %d\n", colorFilter, grandTotal)
+			}
 			fmt.Println("\n[*] The above invoice does not include TAX, the final invoice may look different.")
 			fmt.Println("\n\n\n'lvs' Copyright (C) 2025  SHRIKRISHNA TECH")
 
@@ -209,7 +253,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int) {
 
 }
 
-func applyJobInvoice(fileName string, confirm, formatCsv bool, month int) {
+func applyJobInvoice(fileName string, confirm, formatCsv bool, month int, colorFilter string) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(month)
 	if err != nil {
@@ -251,6 +295,8 @@ func applyJobInvoice(fileName string, confirm, formatCsv bool, month int) {
 				invoiceGroups[item.Invoice] = append(invoiceGroups[item.Invoice], item)
 			}
 
+			var grandTotal, grandQty int
+			var grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X int
 			for invoiceId, items := range invoiceGroups {
 				var total int
 				var qtyTotal int
@@ -264,7 +310,6 @@ func applyJobInvoice(fileName string, confirm, formatCsv bool, month int) {
 								p.Print,
 								color,
 							)
-							// Ensure we have 8 sizes: XS, S, M, L, XL, 2X, 3X, 4X
 							padded := make([]int, 8)
 							copy(padded, quantities)
 							xsTotal += padded[0]
@@ -287,7 +332,19 @@ func applyJobInvoice(fileName string, confirm, formatCsv bool, month int) {
 				}
 				fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
 				fmt.Fprintf(saleLint, "FINAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal, total)
+				grandTotal += total
+				grandQty += qtyTotal
+				grandXS += xsTotal
+				grandS += sTotal
+				grandM += mTotal
+				grandL += lTotal
+				grandXL += xlTotal
+				grand2X += x2Total
+				grand3X += x3Total
+				grand4X += x4Total
 			}
+			fmt.Fprintln(saleLint, "==========\t=====\t=====\t=====\t==\t==\t==\t==\t==\t==\t==\t==\t==\t====")
+			fmt.Fprintf(saleLint, "GRAND TOTAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X, grandQty, grandTotal)
 			saleLint.Flush()
 			fmt.Println("\n[*] The above invoice does not include TAX, the final invoice may look different.")
 			fmt.Println("\n\n\n'lvs' Copyright (C) 2025  SHRIKRISHNA TECH")
