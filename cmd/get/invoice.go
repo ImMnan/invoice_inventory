@@ -24,9 +24,11 @@ var invoiceCmd = &cobra.Command{
 		invoices := []string{}
 		formatCsv, _ := cmd.Flags().GetBool("csv")
 		month, _ := cmd.Flags().GetInt("month")
+		unPaid, _ := cmd.Flags().GetBool("up")
+
 		if len(args) == 0 {
 			// Show all invoices if no argument is provided
-			getInvoices(formatCsv, month)
+			getInvoices(formatCsv, unPaid, month)
 			return
 		}
 		for _, id := range args {
@@ -49,11 +51,12 @@ var invoiceCmd = &cobra.Command{
 
 func init() {
 	GetCmd.AddCommand(invoiceCmd)
-	invoiceCmd.Flags().BoolP("csv", "c", false, "Output format (table or csv)")
+	invoiceCmd.Flags().Bool("csv", false, "Output format (table or csv)")
 	invoiceCmd.Flags().IntP("month", "m", 0, "Month to fetch invoices for (default is current month)")
+	invoiceCmd.Flags().Bool("up", false, "Show all unpaid invoices")
 }
 
-func getInvoices(formatCsv bool, month int) {
+func getInvoices(formatCsv, unPaid bool, month int) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month)
 	if err != nil {
@@ -80,31 +83,63 @@ func getInvoices(formatCsv bool, month int) {
 	if !formatCsv {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(invWr, "INVOICE\tFOR\tTYPE\tQTY\tAMOUNT\tDATE\tIS PAID")
+		
+		var grandTotalQty int
+		var grandTotalAmount int
+		
 		for _, invoice := range invoices {
 			if invoice.InvoiceID != "" || invoice.Type != "NA" {
+				// Filter by unpaid invoices if flag is set
+				if unPaid && invoice.IsPaid {
+					continue
+				}
 				// Calculate total quantity for this invoice
 				var totalQty int
 				for _, product := range invoice.Product {
 					totalQty += product.Quantity
 				}
 				fmt.Fprintf(invWr, "%s\t%s\t%s\t%d\t%d\t%s\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
+				
+				// Add to grand totals
+				grandTotalQty += totalQty
+				grandTotalAmount += invoice.Amount
 			}
 		}
+		
+		// Print totals footer
+		fmt.Fprintln(invWr, "----------\t-----\t-----\t-----\t------\t----------\t-------")
+		fmt.Fprintf(invWr, "TOTAL\t\t\t%d\t%d\t\t\n", grandTotalQty, grandTotalAmount)
 		invWr.Flush()
 	}
 	if formatCsv {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(invWr, "INVOICE,\tFOR,\tTYPE,\tQTY,\tAMOUNT,\tDATE,\tIS PAID")
+		
+		var grandTotalQty int
+		var grandTotalAmount int
+		
 		for _, invoice := range invoices {
 			if invoice.InvoiceID != "" || invoice.Type != "NA" {
+				// Filter by unpaid invoices if flag is set
+				if unPaid && invoice.IsPaid {
+					continue
+				}
 				// Calculate total quantity for this invoice
 				var totalQty int
 				for _, product := range invoice.Product {
 					totalQty += product.Quantity
 				}
 				fmt.Fprintf(invWr, "%s,\t%s,\t%s,\t%d,\t%d,\t%s,\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
+				
+				// Add to grand totals
+				grandTotalQty += totalQty
+				grandTotalAmount += invoice.Amount
 			}
 		}
+		
+		// Print totals footer
+		fmt.Fprintln(invWr, "----------,\t-----,\t-----,\t-----,\t------,\t----------,\t-------")
+		fmt.Fprintf(invWr, "TOTAL,\t,\t,\t%d,\t%d,\t,\t\n", grandTotalQty, grandTotalAmount)
 		invWr.Flush()
 	}
 
