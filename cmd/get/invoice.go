@@ -49,6 +49,13 @@ var invoiceCmd = &cobra.Command{
 	},
 }
 
+// InvoiceFilter defines the filtering criteria for invoices
+type InvoiceFilter struct {
+	UnPaid     bool
+	CustomerID string
+	ShowAll    bool
+}
+
 func init() {
 	GetCmd.AddCommand(invoiceCmd)
 	invoiceCmd.Flags().Bool("csv", false, "Output format (table or csv)")
@@ -80,32 +87,36 @@ func getInvoices(formatCsv, unPaid bool, month int) {
 
 	json.Unmarshal(data, &invoices)
 
+	// Create filter based on input parameters
+	filter := InvoiceFilter{
+		UnPaid:     unPaid,
+		CustomerID: "", // Will be extended for customer filtering later
+		ShowAll:    true,
+	}
+
 	if !formatCsv {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(invWr, "INVOICE\tFOR\tTYPE\tQTY\tAMOUNT\tDATE\tIS PAID")
-		
+
 		var grandTotalQty int
 		var grandTotalAmount int
-		
+
 		for _, invoice := range invoices {
-			if invoice.InvoiceID != "" || invoice.Type != "NA" {
-				// Filter by unpaid invoices if flag is set
-				if unPaid && invoice.IsPaid {
-					continue
-				}
-				// Calculate total quantity for this invoice
-				var totalQty int
-				for _, product := range invoice.Product {
-					totalQty += product.Quantity
-				}
-				fmt.Fprintf(invWr, "%s\t%s\t%s\t%d\t%d\t%s\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
-				
-				// Add to grand totals
-				grandTotalQty += totalQty
-				grandTotalAmount += invoice.Amount
+			if !filter.shouldShowInvoice(invoice) {
+				continue
 			}
+			// Calculate total quantity for this invoice
+			var totalQty int
+			for _, product := range invoice.Product {
+				totalQty += product.Quantity
+			}
+			fmt.Fprintf(invWr, "%s\t%s\t%s\t%d\t%d\t%s\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
+
+			// Add to grand totals
+			grandTotalQty += totalQty
+			grandTotalAmount += invoice.Amount
 		}
-		
+
 		// Print totals footer
 		fmt.Fprintln(invWr, "----------\t-----\t-----\t-----\t------\t----------\t-------")
 		fmt.Fprintf(invWr, "TOTAL\t\t\t%d\t%d\t\t\n", grandTotalQty, grandTotalAmount)
@@ -114,29 +125,26 @@ func getInvoices(formatCsv, unPaid bool, month int) {
 	if formatCsv {
 		invWr := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(invWr, "INVOICE,\tFOR,\tTYPE,\tQTY,\tAMOUNT,\tDATE,\tIS PAID")
-		
+
 		var grandTotalQty int
 		var grandTotalAmount int
-		
+
 		for _, invoice := range invoices {
-			if invoice.InvoiceID != "" || invoice.Type != "NA" {
-				// Filter by unpaid invoices if flag is set
-				if unPaid && invoice.IsPaid {
-					continue
-				}
-				// Calculate total quantity for this invoice
-				var totalQty int
-				for _, product := range invoice.Product {
-					totalQty += product.Quantity
-				}
-				fmt.Fprintf(invWr, "%s,\t%s,\t%s,\t%d,\t%d,\t%s,\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
-				
-				// Add to grand totals
-				grandTotalQty += totalQty
-				grandTotalAmount += invoice.Amount
+			if !filter.shouldShowInvoice(invoice) {
+				continue
 			}
+			// Calculate total quantity for this invoice
+			var totalQty int
+			for _, product := range invoice.Product {
+				totalQty += product.Quantity
+			}
+			fmt.Fprintf(invWr, "%s,\t%s,\t%s,\t%d,\t%d,\t%s,\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
+
+			// Add to grand totals
+			grandTotalQty += totalQty
+			grandTotalAmount += invoice.Amount
 		}
-		
+
 		// Print totals footer
 		fmt.Fprintln(invWr, "----------,\t-----,\t-----,\t-----,\t------,\t----------,\t-------")
 		fmt.Fprintf(invWr, "TOTAL,\t,\t,\t%d,\t%d,\t,\t\n", grandTotalQty, grandTotalAmount)
@@ -327,4 +335,29 @@ func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 		}
 	}
 	return nil
+}
+
+// shouldShowInvoice determines if an invoice should be displayed based on the filter
+func (inf InvoiceFilter) shouldShowInvoice(invoice pkg.Invoice) bool {
+	// Filter by payment status if unpaid flag is set
+	if inf.UnPaid && invoice.IsPaid {
+		return false
+	}
+
+	// Filter by customer ID if specified
+	if inf.CustomerID != "" && inf.CustomerID != "all" {
+		// Check both customer ID and customer name (case-insensitive)
+		customerIDMatch := strings.EqualFold(invoice.Customer.CustomerId, inf.CustomerID)
+		customerNameMatch := strings.Contains(strings.ToLower(invoice.Customer.Name), strings.ToLower(inf.CustomerID))
+		if !customerIDMatch && !customerNameMatch {
+			return false
+		}
+	}
+
+	// Basic validation - exclude empty or invalid invoices
+	if invoice.InvoiceID == "" && invoice.Type == "NA" {
+		return false
+	}
+
+	return true
 }

@@ -42,14 +42,6 @@ func init() {
 	stockCmd.Flags().IntP("month", "m", 0, "Month to fetch stocks for (default is current month)")
 }
 
-// StockFilter defines the filtering criteria for stocks
-type StockFilter struct {
-	ProductID string
-	ColorFlag string
-	ShowAll   bool
-	Printed   bool
-}
-
 func printStocks(productID, colorFlag string, printedFlag bool, month int) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month) // Assuming 0 for current month

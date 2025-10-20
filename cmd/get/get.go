@@ -47,6 +47,14 @@ type ProductStruct struct {
 	Quantity    int              `json:"quantity"`
 }
 
+// StockFilter defines the filtering criteria for stocks
+type StockFilter struct {
+	ProductID string
+	ColorFlag string
+	ShowAll   bool
+	Printed   bool
+}
+
 // shouldShowStockProduct determines if a stock/product should be displayed based on the filter
 func (sf StockFilter) shouldShowStockProduct(stock Stocks, product ProductStruct) bool {
 	if stock.Type != "in_stock" {
