@@ -25,10 +25,11 @@ var invoiceCmd = &cobra.Command{
 		formatCsv, _ := cmd.Flags().GetBool("csv")
 		month, _ := cmd.Flags().GetInt("month")
 		unPaid, _ := cmd.Flags().GetBool("up")
+		customer, _ := cmd.Flags().GetString("customer")
 
 		if len(args) == 0 {
 			// Show all invoices if no argument is provided
-			getInvoices(formatCsv, unPaid, month)
+			getInvoices(formatCsv, unPaid, month, customer)
 			return
 		}
 		for _, id := range args {
@@ -61,9 +62,10 @@ func init() {
 	invoiceCmd.Flags().Bool("csv", false, "Output format (table or csv)")
 	invoiceCmd.Flags().IntP("month", "m", 0, "Month to fetch invoices for (default is current month)")
 	invoiceCmd.Flags().Bool("up", false, "Show all unpaid invoices")
+	invoiceCmd.Flags().String("customer", "all", "Filter invoices by customer ID or name")
 }
 
-func getInvoices(formatCsv, unPaid bool, month int) {
+func getInvoices(formatCsv, unPaid bool, month int, customer string) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month)
 	if err != nil {
@@ -90,7 +92,7 @@ func getInvoices(formatCsv, unPaid bool, month int) {
 	// Create filter based on input parameters
 	filter := InvoiceFilter{
 		UnPaid:     unPaid,
-		CustomerID: "", // Will be extended for customer filtering later
+		CustomerID: customer,
 		ShowAll:    true,
 	}
 
