@@ -261,7 +261,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 // displayRemainingStock calculates and displays the remaining stock after the proposed operation
 func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate, isSale bool, colorFilter string) error {
 	// Load current inventory using existing pkg method
-	allEntries, currentStock, err := existData.GetExistingStock()
+	_, currentStock, err := existData.GetExistingStock()
 	if err != nil {
 		return fmt.Errorf("failed to load existing inventory: %w", err)
 	}
@@ -333,21 +333,11 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 
 	// Display the remaining stock table
 	remainingLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(remainingLint, "PRODUCT ID\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tTOTAL")
-	fmt.Fprintln(remainingLint, "----------\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t-----")
+	fmt.Fprintln(remainingLint, "PRODUCT ID\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tTOTAL")
+	fmt.Fprintln(remainingLint, "----------\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t-----")
 
 	var grandTotal int
 	var grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X int
-
-	// Get product details for print information
-	productDetails := make(map[string]string) // productID -> print
-	for _, entry := range allEntries {
-		for _, prod := range entry.Product {
-			if productDetails[prod.ProductID] == "" {
-				productDetails[prod.ProductID] = prod.Print
-			}
-		}
-	}
 
 	// Display remaining stock for each product/color combination
 	for productID, colors := range remainingStock {
@@ -378,8 +368,7 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 			}
 
 			if hasQuantity || rowTotal != 0 {
-				print := productDetails[productID]
-				line := fmt.Sprintf("%s\t%s\t%s", productID, print, color)
+				line := fmt.Sprintf("%s\t%s", productID, color)
 
 				// Add size quantities
 				for i, qty := range quantities {
@@ -410,35 +399,12 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 		}
 	}
 
-	fmt.Fprintln(remainingLint, "==========\t=====\t=====\t==\t==\t==\t==\t==\t==\t==\t==\t=====")
-	fmt.Fprintf(remainingLint, "GRAND TOTAL\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X, grandTotal)
+	fmt.Fprintln(remainingLint, "==========\t=====\t==\t==\t==\t==\t==\t==\t==\t==\t=====")
+	fmt.Fprintf(remainingLint, "GRAND TOTAL\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X, grandTotal)
 	remainingLint.Flush()
 
 	if isSale && colorFilter != "" {
 		fmt.Printf("\n[*] Remaining stock for color '%s': %d pieces\n", colorFilter, grandTotal)
-	}
-
-	// Show warning for negative stock
-	hasNegative := false
-	for _, colors := range remainingStock {
-		for _, quantities := range colors {
-			for _, qty := range quantities {
-				if qty < 0 {
-					hasNegative = true
-					break
-				}
-			}
-			if hasNegative {
-				break
-			}
-		}
-		if hasNegative {
-			break
-		}
-	}
-
-	if hasNegative {
-		fmt.Println("\n[!] WARNING: Some items will have negative stock (indicated by minus values)")
 	}
 
 	return nil
