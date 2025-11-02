@@ -17,6 +17,13 @@ dataSep:
   productsData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/products_september.json
   inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/inventory_september.json
 
+dataOct:
+  customersData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/customers_october.json
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/invoices_october.json
+  productsData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/products_october.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/inventory_october.json
+
+
 dataTest:
   customersData: /Users/mpatel/Documents/GitHub/lvs_DB/test/customers_test.json
   invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/test/invoices_test.json
