@@ -11,14 +11,13 @@
 
     },
     {
-        "customer_id": "SK21-002",
-        "name": "GJ 21",
-        "address": "Bilimora",
+        "customer_id": "SK03-001",
+        "name": "Body Line",
+        "address": "Daman",
         "rating":4,
         "gst_number": "27AA3rFRK1234C1Z5",
-        "contact": "9876543210",
-        "email": "gj21@example.com",
-        "origin": 2024
-
+        "contact": "8160416616",
+        "email": "bodyline@example.com",
+        "origin": 2025
     }
 ]
