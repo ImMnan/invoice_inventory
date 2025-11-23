@@ -55,6 +55,21 @@ type StockFilter struct {
 	Printed   bool
 }
 
+// InvoiceFilter defines the filtering criteria for invoices
+type InvoiceFilter struct {
+	UnPaid     bool
+	CustomerID string
+	ShowAll    bool
+}
+
+// InvoiceFilter defines the filtering criteria for invoices
+type CustomerFilter struct {
+	CustomerName string
+	CustomerID   string
+	Address      string
+	Rating       int
+}
+
 // shouldShowStockProduct determines if a stock/product should be displayed based on the filter
 func (sf StockFilter) shouldShowStockProduct(stock Stocks, product ProductStruct) bool {
 	if stock.Type != "in_stock" {
