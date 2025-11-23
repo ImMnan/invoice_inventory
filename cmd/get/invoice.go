@@ -50,13 +50,6 @@ var invoiceCmd = &cobra.Command{
 	},
 }
 
-// InvoiceFilter defines the filtering criteria for invoices
-type InvoiceFilter struct {
-	UnPaid     bool
-	CustomerID string
-	ShowAll    bool
-}
-
 func init() {
 	GetCmd.AddCommand(invoiceCmd)
 	invoiceCmd.Flags().Bool("csv", false, "Output format (table or csv)")

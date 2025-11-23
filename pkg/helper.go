@@ -61,6 +61,27 @@ type JsLocalDB struct {
 	InvoiceFile   string
 	ProductFile   string
 }
+
+type Customers struct {
+	CustomerID   string `json:"customer_id"`
+	CustomerName string `json:"customer_name"` // primary key in legacy data
+	AltName      string `json:"name"`          // alternative key in newer data
+	Rating       int    `json:"rating"`
+	Email        string `json:"email"`
+	Phone        string `json:"contact"`
+	Address      string `json:"address"`
+	GST          string `json:"gst_number"`
+	Origin       int    `json:"origin"`
+}
+
+// DisplayName returns whichever name field is populated.
+func (c Customers) DisplayName() string {
+	if c.CustomerName != "" {
+		return c.CustomerName
+	}
+	return c.AltName
+}
+
 type StockData interface {
 	existingStock() (map[string]map[string][]int, error)
 	updateInventoryFromStockUpdate(StockUpdate) (InvoiceGroupedData, error)

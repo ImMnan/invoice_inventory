@@ -225,3 +225,8 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 
 	return nil
 }
+
+// GetExistingStock provides public access to existing stock data
+func (data *JsLocalDB) GetExistingStock() ([]In_stockTshirtStruct, map[string]map[string][]int, error) {
+	return data.getExistingStock()
+}
