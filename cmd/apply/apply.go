@@ -79,8 +79,8 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 			}
 
 			saleLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(saleLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY\tTOTAL")
-			fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
+			fmt.Fprintln(saleLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY")
+			fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--")
 			// Group SaleEntries by Invoice ID
 			invoiceGroups := make(map[string][]pkg.Proforma)
 			for _, item := range stockUpdate.SaleEntries {
@@ -128,7 +128,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 							}
 							line += fmt.Sprintf("\t%d\t%d", p.Quantity, p.Total)
 							fmt.Fprintln(saleLint, line)
-							total += p.Total
+							//total += p.Total
 							qtyTotal += p.Quantity
 						}
 					}
@@ -138,8 +138,8 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 					if invoiceHasColor {
 						matchedInvoices++
 					}
-					fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
-					fmt.Fprintf(saleLint, "INVOICE TOTAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal, total)
+					fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--")
+					fmt.Fprintf(saleLint, "INVOICE TOTAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal)
 
 					grandTotal += total
 					grandQty += qtyTotal
@@ -260,7 +260,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 
 // displayRemainingStock calculates and displays the remaining stock after the proposed operation
 func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate, isSale bool, colorFilter string) error {
-	// Load current inventory using existing pkg method
+	// Load current inventory using existing pkg metho
 	_, currentStock, err := existData.GetExistingStock()
 	if err != nil {
 		return fmt.Errorf("failed to load existing inventory: %w", err)
@@ -289,8 +289,8 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 		for _, product := range item.Product {
 			productID := product.ProductID
 
-			// Skip JOB_ products from calculations
-			if len(productID) >= 4 && productID[:4] == "JOB_" {
+			// Skip JOB_ and TRADE_ products from calculations
+			if (len(productID) >= 4 && productID[:4] == "JOB_") || (len(productID) >= 8 && productID[:8] == "TRADE-ML") {
 				continue
 			}
 
@@ -341,8 +341,8 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 
 	// Display remaining stock for each product/color combination
 	for productID, colors := range remainingStock {
-		// Skip JOB_ products (JOB_DTF type) from the output
-		if len(productID) >= 4 && productID[:4] == "JOB_" {
+		// Skip JOB_ and TRADE_ products from the output
+		if (len(productID) >= 4 && productID[:4] == "JOB_") || (len(productID) >= 8 && productID[:8] == "TRADE-ML") {
 			continue
 		}
 
