@@ -79,8 +79,8 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 			}
 
 			saleLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(saleLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY")
-			fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--")
+			fmt.Fprintln(saleLint, "\n\nPRODUCT ID\tINVOICE\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tQTY\tTOTAL")
+			fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t-----")
 			// Group SaleEntries by Invoice ID
 			invoiceGroups := make(map[string][]pkg.Proforma)
 			for _, item := range stockUpdate.SaleEntries {
@@ -128,7 +128,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 							}
 							line += fmt.Sprintf("\t%d\t%d", p.Quantity, p.Total)
 							fmt.Fprintln(saleLint, line)
-							//total += p.Total
+							total += p.Total
 							qtyTotal += p.Quantity
 						}
 					}
@@ -138,8 +138,8 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 					if invoiceHasColor {
 						matchedInvoices++
 					}
-					fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--")
-					fmt.Fprintf(saleLint, "INVOICE TOTAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal)
+					fmt.Fprintln(saleLint, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t-----")
+					fmt.Fprintf(saleLint, "INVOICE TOTAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, qtyTotal, total)
 
 					grandTotal += total
 					grandQty += qtyTotal
@@ -154,7 +154,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 				}
 			}
 
-			fmt.Fprintln(saleLint, "==========\t=====\t=====\t=====\t==\t==\t==\t==\t==\t==\t==\t==\t==\t====")
+			fmt.Fprintln(saleLint, "==========\t=====\t=====\t=====\t==\t==\t==\t==\t==\t==\t==\t==\t==\t=====")
 			fmt.Fprintf(saleLint, "GRAND TOTAL\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X, grandQty, grandTotal)
 			saleLint.Flush()
 
