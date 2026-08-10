@@ -105,11 +105,12 @@ func getInvoices(formatCsv, unPaid bool, month int, customer string) {
 			for _, product := range invoice.Product {
 				totalQty += product.Quantity
 			}
-			fmt.Fprintf(invWr, "%s\t%s\t%s\t%d\t%d\t%s\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
+			netAmount := invoice.Amount - invoice.PartialPayment
+			fmt.Fprintf(invWr, "%s\t%s\t%s\t%d\t%d\t%s\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, netAmount, invoice.Date, invoice.IsPaid)
 
 			// Add to grand totals
 			grandTotalQty += totalQty
-			grandTotalAmount += invoice.Amount
+			grandTotalAmount += netAmount
 		}
 
 		// Print totals footer
@@ -133,11 +134,12 @@ func getInvoices(formatCsv, unPaid bool, month int, customer string) {
 			for _, product := range invoice.Product {
 				totalQty += product.Quantity
 			}
-			fmt.Fprintf(invWr, "%s,\t%s,\t%s,\t%d,\t%d,\t%s,\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, invoice.Amount, invoice.Date, invoice.IsPaid)
+			netAmount := invoice.Amount - invoice.PartialPayment
+			fmt.Fprintf(invWr, "%s,\t%s,\t%s,\t%d,\t%d,\t%s,\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, netAmount, invoice.Date, invoice.IsPaid)
 
 			// Add to grand totals
 			grandTotalQty += totalQty
-			grandTotalAmount += invoice.Amount
+			grandTotalAmount += netAmount
 		}
 
 		// Print totals footer

@@ -11,14 +11,15 @@ import (
 )
 
 type Invoice struct {
-	Type      string          `json:"type"`
-	InvoiceID string          `json:"invoice_id"`
-	Customer  CustomerData    `json:"customer"`
-	Date      string          `json:"date,omitempty"`
-	IsPaid    bool            `json:"isPaid"`
-	Product   []ProductStruct `json:"product"`
-	Amount    int             `json:"amount"`
-	TaxAmount int             `json:"tax_amount"`
+	Type           string          `json:"type"`
+	InvoiceID      string          `json:"invoice_id"`
+	Customer       CustomerData    `json:"customer"`
+	Date           string          `json:"date,omitempty"`
+	IsPaid         bool            `json:"isPaid"`
+	Product        []ProductStruct `json:"product"`
+	Amount         int             `json:"amount"`
+	TaxAmount      int             `json:"tax_amount"`
+	PartialPayment int             `json:"partial_payment,omitempty"`
 }
 
 type CustomerData struct {
