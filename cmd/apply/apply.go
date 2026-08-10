@@ -167,7 +167,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 
 			// Calculate and display remaining stock after sales
 			fmt.Println("\n[*] REMAINING STOCK AFTER SALES:")
-			err := displayRemainingStock(existData, stockUpdate, true, colorFilter)
+			err := displayRemainingStock(existData, stockUpdate, true, colorFilter, formatCsv)
 			if err != nil {
 				fmt.Printf("Error calculating remaining stock: %v\n", err)
 			}
@@ -225,7 +225,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 
 			// Calculate and display remaining stock after purchases
 			fmt.Println("\n[*] REMAINING STOCK AFTER PURCHASES:")
-			err := displayRemainingStock(existData, stockUpdate, false, "")
+			err := displayRemainingStock(existData, stockUpdate, false, "", formatCsv)
 			if err != nil {
 				fmt.Printf("Error calculating remaining stock: %v\n", err)
 			}
@@ -256,156 +256,4 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 		fmt.Println("Changes not applied. Use --approve to confirm.")
 	}
 
-}
-
-// displayRemainingStock calculates and displays the remaining stock after the proposed operation
-func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate, isSale bool, colorFilter string) error {
-	// Load current inventory using existing pkg metho
-	_, currentStock, err := existData.GetExistingStock()
-	if err != nil {
-		return fmt.Errorf("failed to load existing inventory: %w", err)
-	}
-
-	// Create a copy of current stock for calculation
-	remainingStock := make(map[string]map[string][]int)
-	for productID, colors := range currentStock {
-		remainingStock[productID] = make(map[string][]int)
-		for color, quantities := range colors {
-			remainingStock[productID][color] = make([]int, len(quantities))
-			copy(remainingStock[productID][color], quantities)
-		}
-	}
-
-	// Apply the stock changes
-	var entries []pkg.Proforma
-	if isSale {
-		entries = stockUpdate.SaleEntries
-	} else {
-		entries = stockUpdate.PurchaseEntries
-	}
-
-	// Process each entry and update remaining stock
-	for _, item := range entries {
-		for _, product := range item.Product {
-			productID := product.ProductID
-
-			// Skip JOB_ and TRADE_ products from calculations
-			if (len(productID) >= 4 && productID[:4] == "JOB_") || (len(productID) >= 8 && productID[:8] == "TRADE-ML") {
-				continue
-			}
-
-			// Initialize product in remaining stock if it doesn't exist
-			if remainingStock[productID] == nil {
-				remainingStock[productID] = make(map[string][]int)
-			}
-
-			for color, quantities := range product.Color {
-				// Apply color filter if specified and this is a sale
-				if isSale && colorFilter != "" && color != colorFilter {
-					continue
-				}
-
-				// Initialize color if it doesn't exist
-				if remainingStock[productID][color] == nil {
-					remainingStock[productID][color] = make([]int, 8) // Initialize with zeros
-				}
-
-				// Ensure we have 8 sizes
-				if len(remainingStock[productID][color]) < 8 {
-					padded := make([]int, 8)
-					copy(padded, remainingStock[productID][color])
-					remainingStock[productID][color] = padded
-				}
-
-				// Apply the operation (subtract for sales, add for purchases)
-				for i, qty := range quantities {
-					if i < len(remainingStock[productID][color]) {
-						if isSale {
-							remainingStock[productID][color][i] -= qty
-						} else {
-							remainingStock[productID][color][i] += qty
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Display the remaining stock table
-	remainingLint := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(remainingLint, "PRODUCT ID\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tTOTAL")
-	fmt.Fprintln(remainingLint, "----------\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t-----")
-
-	var grandTotal int
-	var grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X int
-
-	// Display remaining stock for each product/color combination
-	for productID, colors := range remainingStock {
-		// Skip JOB_ and TRADE_ products from the output
-		if (len(productID) >= 4 && productID[:4] == "JOB_") || (len(productID) >= 8 && productID[:8] == "TRADE-ML") {
-			continue
-		}
-
-		for color, quantities := range colors {
-			// Apply color filter if specified and this is a sale
-			if isSale && colorFilter != "" && color != colorFilter {
-				continue
-			}
-
-			// Calculate total for this row
-			rowTotal := 0
-			for _, qty := range quantities {
-				rowTotal += qty
-			}
-
-			// Only show rows that have some quantity (positive or negative)
-			hasQuantity := false
-			for _, qty := range quantities {
-				if qty != 0 {
-					hasQuantity = true
-					break
-				}
-			}
-
-			if hasQuantity || rowTotal != 0 {
-				line := fmt.Sprintf("%s\t%s", productID, color)
-
-				// Add size quantities
-				for i, qty := range quantities {
-					line += fmt.Sprintf("\t%d", qty)
-					switch i {
-					case 0:
-						grandXS += qty
-					case 1:
-						grandS += qty
-					case 2:
-						grandM += qty
-					case 3:
-						grandL += qty
-					case 4:
-						grandXL += qty
-					case 5:
-						grand2X += qty
-					case 6:
-						grand3X += qty
-					case 7:
-						grand4X += qty
-					}
-				}
-				line += fmt.Sprintf("\t%d", rowTotal)
-				fmt.Fprintln(remainingLint, line)
-				grandTotal += rowTotal
-			}
-		}
-	}
-
-	fmt.Fprintln(remainingLint, "==========\t=====\t==\t==\t==\t==\t==\t==\t==\t==\t=====")
-	fmt.Fprintf(remainingLint, "GRAND TOTAL\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X, grandTotal)
-	remainingLint.Flush()
-
-	if isSale && colorFilter != "" {
-		fmt.Printf("\n[*] Remaining stock for color '%s': %d pieces\n", colorFilter, grandTotal)
-	}
-
-	return nil
 }
