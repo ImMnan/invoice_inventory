@@ -19,7 +19,7 @@ type Invoice struct {
 	Product        []ProductStruct `json:"product"`
 	Amount         int             `json:"amount"`
 	TaxAmount      int             `json:"tax_amount"`
-	PartialPayment int             `json:"partial_payment,omitempty"`
+	PartialPayment int             `json:"partial_payment"`
 }
 
 type CustomerData struct {
