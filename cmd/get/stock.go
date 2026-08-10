@@ -97,6 +97,9 @@ func printStocks(productID, colorFlag string, printedFlag bool, month int) {
 				}
 				sizes := prepareSizes(sizeArray)
 				total := calculateTotal(sizes)
+				if total == 0 {
+					continue
+				}
 				printStockRow(tabWriter, stock, product, colorName, sizes, total)
 
 				// Add to totals

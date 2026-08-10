@@ -75,9 +75,9 @@ func (sf StockFilter) shouldShowStockProduct(stock Stocks, product ProductStruct
 	if stock.Type != "in_stock" {
 		return false
 	}
-	// Always exclude JOB_WORK products by default (products with IDs starting with "JOB_")
+	// Always exclude JOB_WORK products by default (products with IDs starting with "JOB_" or "TRADE-ML")
 	// unless specifically requested by product ID
-	if product.ProductID[:4] == "JOB_" {
+	if (len(product.ProductID) >= 4 && product.ProductID[:4] == "JOB_") || (len(product.ProductID) >= 8 && product.ProductID[:8] == "TRADE-ML") {
 		// Only show JOB_ products if explicitly requested by specific product ID
 		if sf.ProductID != "" && sf.ProductID != "all" && product.ProductID == sf.ProductID {
 			return true
