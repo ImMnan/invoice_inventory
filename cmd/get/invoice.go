@@ -105,7 +105,10 @@ func getInvoices(formatCsv, unPaid bool, month int, customer string) {
 			for _, product := range invoice.Product {
 				totalQty += product.Quantity
 			}
-			netAmount := invoice.Amount - invoice.PartialPayment
+			netAmount := invoice.Amount
+			if !invoice.IsPaid {
+				netAmount -= invoice.PartialPayment
+			}
 			fmt.Fprintf(invWr, "%s\t%s\t%s\t%d\t%d\t%s\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, netAmount, invoice.Date, invoice.IsPaid)
 
 			// Add to grand totals
@@ -134,7 +137,10 @@ func getInvoices(formatCsv, unPaid bool, month int, customer string) {
 			for _, product := range invoice.Product {
 				totalQty += product.Quantity
 			}
-			netAmount := invoice.Amount - invoice.PartialPayment
+			netAmount := invoice.Amount
+			if !invoice.IsPaid {
+				netAmount -= invoice.PartialPayment
+			}
 			fmt.Fprintf(invWr, "%s,\t%s,\t%s,\t%d,\t%d,\t%s,\t%t\n", invoice.InvoiceID, invoice.Customer.Name, invoice.Type, totalQty, netAmount, invoice.Date, invoice.IsPaid)
 
 			// Add to grand totals

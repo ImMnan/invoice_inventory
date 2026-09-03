@@ -10,6 +10,7 @@ import (
 	"github.com/immnan/invoice_invoice/cmd/apply"
 	"github.com/immnan/invoice_invoice/cmd/delete"
 	"github.com/immnan/invoice_invoice/cmd/get"
+	"github.com/immnan/invoice_invoice/cmd/update"
 	"github.com/spf13/cobra"
 )
 
@@ -48,6 +49,7 @@ func addSubCommand() {
 	rootCmd.AddCommand(get.GetCmd)
 	rootCmd.AddCommand(apply.ApplyCmd)
 	rootCmd.AddCommand(delete.DeleteCmd)
+	rootCmd.AddCommand(update.UpdateCmd)
 }
 
 func init() {
@@ -97,7 +99,7 @@ func printLicense() {
 }
 
 func versionInfo() {
-	fmt.Printf("\n     version: %s\n", "0.4.1-alpha\n")
+	fmt.Printf("\n     version: %s\n", "0.5.0-alpha\n")
 	fmt.Println(`    'lvs'  Copyright (C) 2025  SHRIKRISHNA TECH
     This program comes with ABSOLUTELY NO WARRANTY; for details type.
     This is free software, and you are welcome to redistribute it
