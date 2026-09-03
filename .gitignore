@@ -22,3 +22,4 @@ go.work
 lvs
 *.csv
 .DS_Store
+*.pdf
