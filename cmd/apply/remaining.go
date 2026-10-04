@@ -4,13 +4,15 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/immnan/invoice_invoice/pkg"
 )
 
-func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate, isSale bool, colorFilter string, formatCsv bool) error {
+func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate, isSale bool, colorFilter, printFilter string, formatCsv bool) error {
 	_, currentStock, err := existData.GetExistingStock()
 	if err != nil {
 		return fmt.Errorf("failed to load existing inventory: %w", err)
@@ -34,20 +36,24 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 	}
 
 	// Track which product+color pairs are impacted
-	type productColor struct{ productID, color string }
-	impacted := make(map[productColor]bool)
+	type productColor struct{ productID, color, printName, stockKey string }
+	impacted := make(map[string]productColor)
 
 	for _, item := range entries {
 		for _, product := range item.Product {
-			productID := product.ProductID
-			if (len(productID) >= 4 && productID[:4] == "JOB_") || (len(productID) >= 8 && productID[:8] == "TRADE-ML") {
+			if printFilter != "" && !strings.EqualFold(pkg.NormalizePrint(product.Print), pkg.NormalizePrint(printFilter)) {
+				continue
+			}
+			productID := pkg.StockKey(product.ProductID, product.Print)
+			if strings.HasPrefix(product.ProductID, "JOB_") || strings.HasPrefix(product.ProductID, "TRADE-ML") {
 				continue
 			}
 			if remainingStock[productID] == nil {
 				remainingStock[productID] = make(map[string][]int)
 			}
 			for color, quantities := range product.Color {
-				if isSale && colorFilter != "" && color != colorFilter {
+				color = strings.ToLower(strings.TrimSpace(color))
+				if colorFilter != "" && !strings.EqualFold(color, strings.TrimSpace(colorFilter)) {
 					continue
 				}
 				if remainingStock[productID][color] == nil {
@@ -67,20 +73,35 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 						}
 					}
 				}
-				impacted[productColor{productID, color}] = true
+				impacted[productID+"\x00"+color] = productColor{product.ProductID, color, pkg.NormalizePrint(product.Print), productID}
 			}
 		}
 	}
+	var rows []productColor
+	for _, row := range impacted {
+		rows = append(rows, row)
+	}
+	sort.Slice(rows, func(first, second int) bool {
+		left, right := rows[first], rows[second]
+		leftPrint, rightPrint := strings.ToLower(left.printName), strings.ToLower(right.printName)
+		if leftPrint != rightPrint {
+			return leftPrint < rightPrint
+		}
+		if left.color != right.color {
+			return left.color < right.color
+		}
+		return left.productID < right.productID
+	})
 
 	var grandTotal int
 	var grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X int
 
 	if formatCsv {
 		w := csv.NewWriter(os.Stdout)
-		_ = w.Write([]string{"PRODUCT ID", "COLOR", "XS", "S", "M", "L", "XL", "2X", "3X", "4X", "TOTAL"})
-		for pc := range impacted {
+		_ = w.Write([]string{"PRODUCT ID", "PRINT", "COLOR", "XS", "S", "M", "L", "XL", "2X", "3X", "4X", "TOTAL"})
+		for _, pc := range rows {
 			padded := make([]int, 8)
-			copy(padded, remainingStock[pc.productID][pc.color])
+			copy(padded, remainingStock[pc.stockKey][pc.color])
 			rowTotal := 0
 			for i, q := range padded {
 				rowTotal += q
@@ -104,14 +125,14 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 				}
 			}
 			grandTotal += rowTotal
-			row := []string{pc.productID, pc.color}
+			row := []string{pc.productID, pc.printName, pc.color}
 			for _, q := range padded {
 				row = append(row, strconv.Itoa(q))
 			}
 			row = append(row, strconv.Itoa(rowTotal))
 			_ = w.Write(row)
 		}
-		_ = w.Write([]string{"GRAND TOTAL", "",
+		_ = w.Write([]string{"GRAND TOTAL", "", "",
 			strconv.Itoa(grandXS), strconv.Itoa(grandS), strconv.Itoa(grandM), strconv.Itoa(grandL),
 			strconv.Itoa(grandXL), strconv.Itoa(grand2X), strconv.Itoa(grand3X), strconv.Itoa(grand4X),
 			strconv.Itoa(grandTotal),
@@ -119,11 +140,11 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 		w.Flush()
 	} else {
 		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(tw, "PRODUCT ID\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tTOTAL")
-		fmt.Fprintln(tw, "----------\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t-----")
-		for pc := range impacted {
+		fmt.Fprintln(tw, "PRODUCT ID\tPRINT\tCOLOR\tXS\tS\tM\tL\tXL\t2X\t3X\t4X\tTOTAL")
+		fmt.Fprintln(tw, "----------\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t-----")
+		for _, pc := range rows {
 			padded := make([]int, 8)
-			copy(padded, remainingStock[pc.productID][pc.color])
+			copy(padded, remainingStock[pc.stockKey][pc.color])
 			rowTotal := 0
 			for i, q := range padded {
 				rowTotal += q
@@ -147,15 +168,15 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 				}
 			}
 			grandTotal += rowTotal
-			line := fmt.Sprintf("%s\t%s", pc.productID, pc.color)
+			line := fmt.Sprintf("%s\t%s\t%s", pc.productID, pc.printName, pc.color)
 			for _, q := range padded {
 				line += fmt.Sprintf("\t%d", q)
 			}
 			line += fmt.Sprintf("\t%d", rowTotal)
 			fmt.Fprintln(tw, line)
 		}
-		fmt.Fprintln(tw, "==========\t=====\t==\t==\t==\t==\t==\t==\t==\t==\t=====")
-		fmt.Fprintf(tw, "GRAND TOTAL\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+		fmt.Fprintln(tw, "==========\t=====\t=====\t==\t==\t==\t==\t==\t==\t==\t==\t=====")
+		fmt.Fprintf(tw, "GRAND TOTAL\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
 			grandXS, grandS, grandM, grandL, grandXL, grand2X, grand3X, grand4X, grandTotal)
 		tw.Flush()
 	}

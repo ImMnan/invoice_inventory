@@ -3,6 +3,7 @@ package apply
 import (
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/immnan/invoice_invoice/cmd/get"
@@ -21,8 +22,9 @@ var ApplyCmd = &cobra.Command{
 		formatCsv, _ := cmd.Flags().GetBool("csv")
 		month, _ := cmd.Flags().GetInt("month")
 		colorFilter, _ := cmd.Flags().GetString("color")
+		printFilter, _ := cmd.Flags().GetString("print")
 		if file != "" {
-			applyStkInvoice(file, approve, formatCsv, month, colorFilter)
+			applyStkInvoice(file, approve, formatCsv, month, colorFilter, printFilter)
 		} else {
 			cmd.Help()
 		}
@@ -35,11 +37,12 @@ func init() {
 	ApplyCmd.Flags().Bool("csv", false, "Output in CSV format")
 	ApplyCmd.Flags().IntP("month", "m", 0, "Month to apply changes for")
 	ApplyCmd.Flags().StringP("color", "c", "", "Filter by color (shows count without --approve)")
+	ApplyCmd.Flags().String("print", "", "Filter preview by design name (does not limit --approve)")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 
-func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorFilter string) {
+func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorFilter, printFilter string) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(month)
 	if err != nil {
@@ -99,9 +102,12 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 
 				for _, item := range items {
 					for _, p := range item.Product {
+						if printFilter != "" && !strings.EqualFold(pkg.NormalizePrint(p.Print), pkg.NormalizePrint(printFilter)) {
+							continue
+						}
 						for color, quantities := range p.Color {
 							// Apply color filter if specified
-							if colorFilter != "" && color != colorFilter {
+							if colorFilter != "" && !strings.EqualFold(color, strings.TrimSpace(colorFilter)) {
 								continue
 							}
 							invoiceHasColor = true
@@ -134,7 +140,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 					}
 				}
 
-				if invoiceHasColor || colorFilter == "" {
+				if invoiceHasColor || (colorFilter == "" && printFilter == "") {
 					if invoiceHasColor {
 						matchedInvoices++
 					}
@@ -167,7 +173,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 
 			// Calculate and display remaining stock after sales
 			fmt.Println("\n[*] REMAINING STOCK AFTER SALES:")
-			err := displayRemainingStock(existData, stockUpdate, true, colorFilter, formatCsv)
+			err := displayRemainingStock(existData, stockUpdate, true, colorFilter, printFilter, formatCsv)
 			if err != nil {
 				fmt.Printf("Error calculating remaining stock: %v\n", err)
 			}
@@ -191,7 +197,13 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 				var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
 				for _, item := range items {
 					for _, p := range item.Product {
+						if printFilter != "" && !strings.EqualFold(pkg.NormalizePrint(p.Print), pkg.NormalizePrint(printFilter)) {
+							continue
+						}
 						for color, quantities := range p.Color {
+							if colorFilter != "" && !strings.EqualFold(color, strings.TrimSpace(colorFilter)) {
+								continue
+							}
 							line := fmt.Sprintf("%s\t%s\t%s\t%s",
 								p.ProductID,
 								invoiceId,
@@ -225,7 +237,7 @@ func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorF
 
 			// Calculate and display remaining stock after purchases
 			fmt.Println("\n[*] REMAINING STOCK AFTER PURCHASES:")
-			err := displayRemainingStock(existData, stockUpdate, false, "", formatCsv)
+			err := displayRemainingStock(existData, stockUpdate, false, colorFilter, printFilter, formatCsv)
 			if err != nil {
 				fmt.Printf("Error calculating remaining stock: %v\n", err)
 			}
