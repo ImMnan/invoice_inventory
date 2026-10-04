@@ -20,6 +20,7 @@ func (product *ProductSlice) addProforma() (map[string]map[string][]int, []Profo
 
 	for _, productItem := range *product {
 		for _, prod := range productItem.Product {
+			stockKey := StockKey(prod.ProductID, prod.Print)
 			if productItem.Type == "proforma" && productItem.Type != "purchase-invoice" && productItem.Type != "job" {
 				saleEntry := Proforma{
 					UUID:     uuid.New().String(),
@@ -31,7 +32,7 @@ func (product *ProductSlice) addProforma() (map[string]map[string][]int, []Profo
 					Rejected: false,
 					Product: []ProductStruct{{
 						ProductID: prod.ProductID,
-						Print:     prod.Print,
+						Print:     NormalizePrint(prod.Print),
 						Gen:       prod.Gen,
 						GST:       prod.GST,
 						Color:     make(map[string][]int),
@@ -40,23 +41,23 @@ func (product *ProductSlice) addProforma() (map[string]map[string][]int, []Profo
 					}},
 				}
 				for color, quantities := range prod.Color {
-					saleEntry.Product[0].Color[strings.ToLower(color)] = quantities
+					saleEntry.Product[0].Color[strings.ToLower(strings.TrimSpace(color))] = quantities
 				}
 				saleEntries = append(saleEntries, saleEntry)
-				if stockUpdates[prod.ProductID] == nil {
-					stockUpdates[prod.ProductID] = make(map[string][]int)
+				if stockUpdates[stockKey] == nil {
+					stockUpdates[stockKey] = make(map[string][]int)
 				}
 				for color, quantities := range prod.Color {
-					colorKey := strings.ToLower(color)
-					if existing, exists := stockUpdates[prod.ProductID][colorKey]; exists {
+					colorKey := strings.ToLower(strings.TrimSpace(color))
+					if existing, exists := stockUpdates[stockKey][colorKey]; exists {
 						for i, qty := range quantities {
 							if i < len(existing) {
 								existing[i] += qty
 							}
 						}
 					} else {
-						stockUpdates[prod.ProductID][colorKey] = make([]int, len(quantities))
-						copy(stockUpdates[prod.ProductID][colorKey], quantities)
+						stockUpdates[stockKey][colorKey] = make([]int, len(quantities))
+						copy(stockUpdates[stockKey][colorKey], quantities)
 					}
 				}
 			}

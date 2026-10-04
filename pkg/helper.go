@@ -1,5 +1,19 @@
 package pkg
 
+import "strings"
+
+func NormalizePrint(printName string) string {
+	printName = strings.TrimSpace(printName)
+	if printName == "" || strings.EqualFold(printName, "plain") {
+		return "plain"
+	}
+	return printName
+}
+
+func StockKey(productID, printName string) string {
+	return productID + "\x00" + strings.ToLower(NormalizePrint(printName))
+}
+
 type In_stockTshirtStruct struct {
 	UUID     string          `json:"uuid"`
 	Type     string          `json:"type"`

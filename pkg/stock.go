@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 func (data *JsLocalDB) Stocks() ([]byte, error) {
@@ -42,6 +44,7 @@ func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]i
 	// Process proforma stock updates (subtract quantities)
 	if stkUp.proformaStkUpdates != nil {
 		for productUID, colors := range stkUp.proformaStkUpdates {
+			productLabel := strings.ReplaceAll(productUID, "\x00", " design ")
 			if currentStock[productUID] != nil {
 				for color, subtractQuantities := range colors {
 					// Try to find matching color (case-insensitive)
@@ -67,18 +70,18 @@ func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]i
 									//fmt.Printf("Subtracting %d from %s %s size %d: %d -> %d\n", subtractQty, productUID, color, i, stockQuantities[i]+subtractQty, stockQuantities[i])
 								} else {
 									return fmt.Errorf("\nerror: not enough stock for %s %s size %d. available: %d, requested: %d",
-										productUID, color, i, stockQuantities[i], subtractQty)
+										productLabel, color, i, stockQuantities[i], subtractQty)
 								}
 							}
 						}
 						// No need to reassign since we modified the original slice
 					} else {
-						return fmt.Errorf("\nerror: color '%s' not found in existing stock for product %s", color, productUID)
+						return fmt.Errorf("\nerror: color '%s' not found in existing stock for product %s", color, productLabel)
 					}
 				}
 			} else {
 				// New product - check if we're trying to subtract from non-existent stock
-				return fmt.Errorf("\nerror: product '%s' not found in existing stock", productUID)
+				return fmt.Errorf("\nerror: product '%s' not found in existing stock", productLabel)
 			}
 		}
 	}
@@ -86,6 +89,10 @@ func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]i
 	// Process purchase stock updates (add quantities)
 	if stkUp.purchaseStkUpdates != nil {
 		for productUID, colors := range stkUp.purchaseStkUpdates {
+			productLabel := strings.ReplaceAll(productUID, "\x00", " design ")
+			if currentStock[productUID] == nil {
+				currentStock[productUID] = make(map[string][]int)
+			}
 			if currentStock[productUID] != nil {
 				for color, addQuantities := range colors {
 					// Try to find matching color (case-insensitive)
@@ -108,7 +115,7 @@ func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]i
 								// Uncomment for debugging
 								//fmt.Printf("Adding %d to %s %s size %d: %d -> %d\n", addQty, productUID, color, i, stockQuantities[i]-addQty, stockQuantities[i])
 							} else {
-								return fmt.Errorf("\nerror: size index %d out of range for product %s color %s", i, productUID, color)
+								return fmt.Errorf("\nerror: size index %d out of range for product %s color %s", i, productLabel, color)
 							}
 						}
 						// No need to reassign since we modified the original slice
@@ -122,7 +129,7 @@ func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]i
 				}
 			} else {
 				// New product - check if we're trying to add to non-existent stock
-				return fmt.Errorf("\nerror: product '%s' not found in existing stock", productUID)
+				return fmt.Errorf("\nerror: product '%s' not found in existing stock", productLabel)
 			}
 		}
 	}
@@ -142,10 +149,28 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 	}
 
 	// Step 3: Update in_stock entries with calculated values (handle Product as a slice)
+	seen := make(map[string]bool)
+	stockEntryByProduct := make(map[string]int)
+	productMetadata := make(map[string]ProductStruct)
+	stockEntryIndex := -1
 	for i := range allEntries {
 		if allEntries[i].Type == "in_stock" {
+			if stockEntryIndex == -1 {
+				stockEntryIndex = i
+			}
+			var products []ProductStruct
 			for j := range allEntries[i].Product {
-				productUID := allEntries[i].Product[j].ProductID
+				productID := allEntries[i].Product[j].ProductID
+				if _, exists := stockEntryByProduct[productID]; !exists {
+					stockEntryByProduct[productID] = i
+					productMetadata[productID] = allEntries[i].Product[j]
+				}
+				allEntries[i].Product[j].Print = NormalizePrint(allEntries[i].Product[j].Print)
+				productUID := StockKey(allEntries[i].Product[j].ProductID, allEntries[i].Product[j].Print)
+				if seen[productUID] {
+					continue
+				}
+				seen[productUID] = true
 				if updatedStock, exists := currentStock[productUID]; exists {
 					allEntries[i].Product[j].Color = make(map[string][]int)
 					for color, newQuantities := range updatedStock {
@@ -160,7 +185,76 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 					}
 					allEntries[i].Product[j].Quantity = quantity
 				}
+				products = append(products, allEntries[i].Product[j])
 			}
+			allEntries[i].Product = products
+		}
+	}
+	catalogLoaded := false
+	for _, purchase := range stockUpdate.PurchaseEntries {
+		for _, product := range purchase.Product {
+			key := StockKey(product.ProductID, product.Print)
+			if seen[key] {
+				continue
+			}
+			if !catalogLoaded && data.ProductFile != "" {
+				catalog, err := data.getProductData()
+				if err != nil {
+					return fmt.Errorf("failed to load product metadata: %w", err)
+				}
+				for _, catalogProduct := range catalog {
+					metadata := productMetadata[catalogProduct.ProductID]
+					metadata.ProductID = catalogProduct.ProductID
+					if catalogProduct.Name != "" {
+						metadata.Name = catalogProduct.Name
+					}
+					if catalogProduct.Description != "" {
+						metadata.Description = catalogProduct.Description
+					}
+					if catalogProduct.Gen != "" {
+						metadata.Gen = catalogProduct.Gen
+					}
+					if catalogProduct.GST != 0 {
+						metadata.GST = catalogProduct.GST
+					}
+					if catalogProduct.Price != 0 {
+						metadata.Price = catalogProduct.Price
+					}
+					productMetadata[catalogProduct.ProductID] = metadata
+				}
+				catalogLoaded = true
+			}
+			seen[key] = true
+			if metadata, exists := productMetadata[product.ProductID]; exists {
+				product.Name = metadata.Name
+				product.Description = metadata.Description
+				product.GST = metadata.GST
+				product.Price = metadata.Price
+				if metadata.Gen != "" {
+					product.Gen = metadata.Gen
+				}
+			}
+			product.Print = NormalizePrint(product.Print)
+			product.Color = currentStock[key]
+			product.Quantity = 0
+			product.Total = 0
+			for _, quantities := range product.Color {
+				for _, quantity := range quantities {
+					product.Quantity += quantity
+				}
+			}
+			if stockEntryIndex == -1 {
+				stockEntryIndex = len(allEntries)
+				allEntries = append(allEntries, In_stockTshirtStruct{
+					UUID: uuid.New().String(), Type: "in_stock", Invoice: "NA",
+				})
+			}
+			targetIndex, exists := stockEntryByProduct[product.ProductID]
+			if !exists {
+				targetIndex = stockEntryIndex
+				stockEntryByProduct[product.ProductID] = targetIndex
+			}
+			allEntries[targetIndex].Product = append(allEntries[targetIndex].Product, product)
 		}
 	}
 
@@ -198,6 +292,9 @@ func (data *JsLocalDB) UpdateInventoryFromStockUpdate(stockUpdate *StockUpdate) 
 	grouped := make(map[string]*In_stockTshirtStruct)
 
 	for _, entry := range allEntries {
+		if entry.Type == "in_stock" && len(entry.Product) == 0 {
+			continue
+		}
 		key := entry.Invoice + "|" + entry.Type + "|" + entry.Date
 		if group, ok := grouped[key]; ok {
 			group.Product = append(group.Product, entry.Product...)

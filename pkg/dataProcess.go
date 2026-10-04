@@ -28,14 +28,46 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 		return nil, fmt.Errorf("failed to read csv data: %w", err)
 	}
 	var productData []TshirtStruct
+	if len(dataValue) == 0 {
+		return nil, fmt.Errorf("empty csv data")
+	}
+	headers := make(map[string]int)
+	for index, header := range dataValue[0] {
+		headers[strings.ToLower(strings.TrimSpace(header))] = index
+	}
+	typeColumn, exists := headers["type"]
+	if !exists {
+		return nil, fmt.Errorf("missing csv column %q", "type")
+	}
 
 	for i, row := range dataValue {
 		if i == 0 { // Skip header row
 			continue
 		}
+		rowType := strings.TrimSpace(row[typeColumn])
+		if rowType != "proforma" && rowType != "purchase-invoice" {
+			return nil, fmt.Errorf("invalid row type %s at row %d", rowType, i+1)
+		}
+		columns := []string{"type", "invoice", "for", "product_id", "date", "price", "gst", "print", "gen", "color", "xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl", "quantity"}
+		if rowType == "purchase-invoice" {
+			columns = []string{"type", "invoice", "from", "product_id", "date", "gen", "color", "xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl", "quantity", "print"}
+		}
+		ordered := make([]string, len(columns))
+		for index, column := range columns {
+			position, exists := headers[column]
+			if !exists {
+				if column == "print" {
+					ordered[index] = "plain"
+					continue
+				}
+				return nil, fmt.Errorf("missing csv column %q", column)
+			}
+			ordered[index] = strings.TrimSpace(row[position])
+		}
+		row = ordered
 		if row[0] == "proforma" { // Ensure we only process proforma rows
 
-			if len(row) < 18 { // Ensure we have all required columns
+			if len(row) < 19 { // Ensure we have all required columns
 				continue
 			}
 
@@ -86,7 +118,7 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 				Rejected: false, // Default to false for proforma
 				Product: []ProductStruct{{
 					ProductID: strings.TrimSpace(row[3]), // Product_Id
-					Print:     strings.TrimSpace(row[7]), // Print
+					Print:     NormalizePrint(row[7]),    // Print
 					Gen:       strings.TrimSpace(row[8]), // Gen
 					Price:     priceInt,
 					GST:       gstInt,
@@ -97,7 +129,7 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 			})
 		} else if row[0] == "purchase-invoice" { // Ensure we only process purchase invoice rows
 
-			if len(row) < 15 { // Ensure we have all required columns
+			if len(row) < 17 { // Ensure we have all required columns
 				continue
 			}
 			// Parse size quantities
@@ -133,6 +165,7 @@ func (file *FileData) GetStockUpdate() (ProductSlice, error) {
 				From:    strings.TrimSpace(row[2]), // Default vendor since it's not in CSV
 				Product: []ProductStruct{{
 					ProductID: strings.TrimSpace(row[3]), // Product_Id
+					Print:     NormalizePrint(row[16]),
 					Gen:       strings.TrimSpace(row[5]), // Gen
 					Color:     colorMap,
 					Total:     total,
@@ -165,12 +198,23 @@ func (data *JsLocalDB) getExistingStock() ([]In_stockTshirtStruct, map[string]ma
 	for _, item := range allEntries {
 		if item.Type == "in_stock" {
 			for _, prod := range item.Product {
-				if currentStock[prod.ProductID] == nil {
-					currentStock[prod.ProductID] = make(map[string][]int)
+				stockKey := StockKey(prod.ProductID, prod.Print)
+				if currentStock[stockKey] == nil {
+					currentStock[stockKey] = make(map[string][]int)
 				}
 				for color, quantities := range prod.Color {
-					currentStock[prod.ProductID][color] = make([]int, len(quantities))
-					copy(currentStock[prod.ProductID][color], quantities)
+					color = strings.ToLower(strings.TrimSpace(color))
+					existing := currentStock[stockKey][color]
+					sizeCount := max(8, len(quantities))
+					if len(existing) < sizeCount {
+						padded := make([]int, sizeCount)
+						copy(padded, existing)
+						existing = padded
+					}
+					for index, quantity := range quantities {
+						existing[index] += quantity
+					}
+					currentStock[stockKey][color] = existing
 				}
 			}
 		}
