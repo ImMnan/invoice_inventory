@@ -21,6 +21,7 @@ var stockCmd = &cobra.Command{
 		month, _ := cmd.Flags().GetInt("month")
 		colorFlag, _ := cmd.Flags().GetString("color")
 		printedFlag, _ := cmd.Flags().GetBool("printed")
+		printFlag, _ := cmd.Flags().GetString("print")
 		var productID string
 
 		if len(args) == 0 {
@@ -28,7 +29,7 @@ var stockCmd = &cobra.Command{
 		} else {
 			productID = args[0]
 		}
-		printStocks(productID, colorFlag, printedFlag, month)
+		printStocks(productID, colorFlag, printFlag, printedFlag, month)
 	},
 }
 
@@ -37,12 +38,13 @@ func init() {
 	stockCmd.Flags().BoolP("help", "h", false, "Help message for toggle")
 	stockCmd.Flags().Bool("csv", false, "Output in CSV format")
 	stockCmd.Flags().BoolP("printed", "p", false, "Show printed stock values")
+	stockCmd.Flags().String("print", "", "Filter by design name (use plain for unprinted stock)")
 	//	stockCmd.Flags().BoolP("rejected", "r", false, "Show rejected stock values")
 	stockCmd.Flags().StringP("color", "c", "", "Show stock values for specific color only (e.g., red, green, blue)")
 	stockCmd.Flags().IntP("month", "m", 0, "Month to fetch stocks for (default is current month)")
 }
 
-func printStocks(productID, colorFlag string, printedFlag bool, month int) {
+func printStocks(productID, colorFlag, printFlag string, printedFlag bool, month int) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month) // Assuming 0 for current month
 	if err != nil {
@@ -74,6 +76,7 @@ func printStocks(productID, colorFlag string, printedFlag bool, month int) {
 	filter := StockFilter{
 		ProductID: productID,
 		ColorFlag: colorFlag,
+		PrintFlag: printFlag,
 		ShowAll:   productID == "all" || productID == "",
 		Printed:   printedFlag,
 	}
@@ -82,6 +85,7 @@ func printStocks(productID, colorFlag string, printedFlag bool, month int) {
 	var grandTotal int
 	var qtyTotal int
 	var xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total int
+	var rows []stockRow
 
 	for _, stock := range stocks {
 		for _, product := range stock.Product {
@@ -100,7 +104,7 @@ func printStocks(productID, colorFlag string, printedFlag bool, month int) {
 				if total == 0 {
 					continue
 				}
-				printStockRow(tabWriter, stock, product, colorName, sizes, total)
+				rows = append(rows, stockRow{stock, product, colorName, sizes, total})
 
 				// Add to totals
 				xsTotal += sizes[0]
@@ -119,6 +123,10 @@ func printStocks(productID, colorFlag string, printedFlag bool, month int) {
 	}
 
 	// Print totals footer
+	sortStockRows(rows)
+	for _, row := range rows {
+		printStockRow(tabWriter, row.stock, row.product, row.color, row.sizes, row.total)
+	}
 	fmt.Fprintln(tabWriter, "----------\t-----\t-----\t-----\t--\t--\t--\t--\t--\t--\t--\t--\t--\t----")
 	fmt.Fprintf(tabWriter, "FINAL\t\t\t\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", xsTotal, sTotal, mTotal, lTotal, xlTotal, x2Total, x3Total, x4Total, grandTotal)
 }

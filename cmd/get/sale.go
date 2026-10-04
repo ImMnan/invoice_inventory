@@ -27,8 +27,9 @@ var saleCmd = &cobra.Command{
 		}
 		colorFlag, _ := cmd.Flags().GetString("color")
 		printedFlag, _ := cmd.Flags().GetBool("printed")
+		printFlag, _ := cmd.Flags().GetString("print")
 
-		printSales(productID, colorFlag, printedFlag, month)
+		printSales(productID, colorFlag, printFlag, printedFlag, month)
 	},
 }
 
@@ -37,6 +38,7 @@ func init() {
 	saleCmd.Flags().BoolP("help", "h", false, "Help message for toggle")
 	saleCmd.Flags().Bool("csv", false, "Output in CSV format")
 	saleCmd.Flags().BoolP("printed", "p", false, "Show printed sale values")
+	saleCmd.Flags().String("print", "", "Filter by design name (use plain for unprinted sales)")
 	//	saleCmd.Flags().BoolP("rejected", "r", false, "Show rejected sale values")
 	saleCmd.Flags().StringP("color", "c", "", "Show sale values for specific color only (e.g., red, green, blue)")
 	saleCmd.Flags().IntP("month", "m", 0, "Month to fetch sales for (default is current month)")
@@ -49,7 +51,7 @@ type SaleFilter struct {
 	Printed   bool
 }
 
-func printSales(productID, colorFlag string, printedFlag bool, month int) {
+func printSales(productID, colorFlag, printFlag string, printedFlag bool, month int) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month) // Assuming 0 for current month
 	if err != nil {
@@ -81,6 +83,7 @@ func printSales(productID, colorFlag string, printedFlag bool, month int) {
 	filter := StockFilter{
 		ProductID: productID,
 		ColorFlag: colorFlag,
+		PrintFlag: printFlag,
 		ShowAll:   productID == "all" || productID == "",
 		Printed:   printedFlag,
 	}
@@ -96,6 +99,9 @@ func printSales(productID, colorFlag string, printedFlag bool, month int) {
 		}
 		// Iterate through each product in the stock item
 		for _, product := range stock.Product {
+			if (!filter.ShowAll && product.ProductID != filter.ProductID) || !filter.shouldShowPrintedProduct(product) {
+				continue
+			}
 			// Iterate through each color for this product
 			for colorName, sizeArray := range product.Color {
 				if !filter.shouldShowColor(colorName) {

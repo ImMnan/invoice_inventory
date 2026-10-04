@@ -2,8 +2,11 @@ package get
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"text/tabwriter"
 
+	"github.com/immnan/invoice_invoice/pkg"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -51,6 +54,7 @@ type ProductStruct struct {
 type StockFilter struct {
 	ProductID string
 	ColorFlag string
+	PrintFlag string
 	ShowAll   bool
 	Printed   bool
 }
@@ -98,10 +102,14 @@ func (sf StockFilter) shouldShowStockProduct(stock Stocks, product ProductStruct
 
 // shouldShowPrintedProduct determines if a product should be displayed based on the printed flag
 func (sf StockFilter) shouldShowPrintedProduct(product ProductStruct) bool {
+	printName := pkg.NormalizePrint(product.Print)
+	if sf.PrintFlag != "" && !strings.EqualFold(printName, pkg.NormalizePrint(sf.PrintFlag)) {
+		return false
+	}
 	if !sf.Printed {
 		return true
 	}
-	return product.Print != ""
+	return printName != "plain"
 }
 
 func (sf StockFilter) shouldShowSales(stock Stocks) bool {
@@ -154,7 +162,7 @@ func (sf StockFilter) shouldShowColor(colorName string) bool {
 	if sf.ColorFlag == "" {
 		return true
 	}
-	return colorName == sf.ColorFlag
+	return strings.EqualFold(colorName, strings.TrimSpace(sf.ColorFlag))
 }
 
 // prepareSizes ensures we have exactly 8 size values, padding with 0 if necessary
@@ -182,7 +190,7 @@ func printStockRow(tabWriter *tabwriter.Writer, stock Stocks, product ProductStr
 		stock.Invoice,
 		stock.Type,
 		colorName,
-		product.Print,
+		pkg.NormalizePrint(product.Print),
 		sizes[0], // XS
 		sizes[1], // S
 		sizes[2], // M
@@ -192,6 +200,29 @@ func printStockRow(tabWriter *tabwriter.Writer, stock Stocks, product ProductStr
 		sizes[6], // 3XL
 		sizes[7], // 4XL
 		total)
+}
+
+type stockRow struct {
+	stock   Stocks
+	product ProductStruct
+	color   string
+	sizes   []int
+	total   int
+}
+
+func sortStockRows(rows []stockRow) {
+	sort.SliceStable(rows, func(first, second int) bool {
+		left, right := rows[first], rows[second]
+		leftFields := []string{left.product.ProductID, pkg.NormalizePrint(left.product.Print), left.color, left.stock.Invoice}
+		rightFields := []string{right.product.ProductID, pkg.NormalizePrint(right.product.Print), right.color, right.stock.Invoice}
+		for index := range leftFields {
+			leftValue, rightValue := strings.ToLower(leftFields[index]), strings.ToLower(rightFields[index])
+			if leftValue != rightValue {
+				return leftValue < rightValue
+			}
+		}
+		return false
+	})
 }
 
 func ConfigData(month int) (inventoryDB, customerDB, invoiceDB, productDB string, logErr error) {

@@ -27,8 +27,9 @@ var purchaseCmd = &cobra.Command{
 		}
 		colorFlag, _ := cmd.Flags().GetString("color")
 		printedFlag, _ := cmd.Flags().GetBool("printed")
+		printFlag, _ := cmd.Flags().GetString("print")
 
-		printPurchases(productID, colorFlag, printedFlag, month)
+		printPurchases(productID, colorFlag, printFlag, printedFlag, month)
 	},
 }
 
@@ -37,6 +38,7 @@ func init() {
 	purchaseCmd.Flags().BoolP("help", "h", false, "Help message for toggle")
 	purchaseCmd.Flags().Bool("csv", false, "Output in CSV format")
 	purchaseCmd.Flags().BoolP("printed", "p", false, "Show printed purchase values")
+	purchaseCmd.Flags().String("print", "", "Filter by design name (use plain for unprinted purchases)")
 	//	purchaseCmd.Flags().BoolP("rejected", "r", false, "Show rejected purchase values")
 	purchaseCmd.Flags().StringP("color", "c", "", "Show purchase values for specific color only (e.g., red, green, blue)")
 	purchaseCmd.Flags().IntP("month", "m", 0, "Month to fetch purchases for (default is current month)")
@@ -49,7 +51,7 @@ type PurchaseFilter struct {
 	Printed   bool
 }
 
-func printPurchases(productID, colorFlag string, printedFlag bool, month int) {
+func printPurchases(productID, colorFlag, printFlag string, printedFlag bool, month int) {
 
 	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month)
 	if err != nil {
@@ -81,6 +83,7 @@ func printPurchases(productID, colorFlag string, printedFlag bool, month int) {
 	filter := StockFilter{
 		ProductID: productID,
 		ColorFlag: colorFlag,
+		PrintFlag: printFlag,
 		ShowAll:   productID == "all" || productID == "",
 		Printed:   printedFlag,
 	}
@@ -96,6 +99,9 @@ func printPurchases(productID, colorFlag string, printedFlag bool, month int) {
 		}
 		// Iterate through each product in stock.Product
 		for _, product := range stock.Product {
+			if (!filter.ShowAll && product.ProductID != filter.ProductID) || !filter.shouldShowPrintedProduct(product) {
+				continue
+			}
 			// Iterate through each color for this product
 			for colorName, sizeArray := range product.Color {
 				if !filter.shouldShowColor(colorName) {
