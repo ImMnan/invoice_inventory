@@ -5,24 +5,41 @@ data:
   productsData: /Users/mpatel/Documents/GitHub/lvs_DB/products.json
   inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/inventory.json
 
-dataJul:
-  customersData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/customers_july.json
-  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/invoices_july.json
-  productsData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/products_july.json
-  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/inventory_july.json
+dataJan:
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2025-26/invoices_january.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2025-26/inventory_january.json
 
-dataSep:
-  customersData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/customers_september.json
-  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/invoices_september.json
-  productsData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/products_september.json
-  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/inventory_september.json
+dataFeb:
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2025-26/invoices_february.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2025-26/inventory_february.json
 
-dataOct:
-  customersData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/customers_october.json
-  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/invoices_october.json
-  productsData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/products_october.json
-  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2025/inventory_october.json
+dataMar:
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/invoices_may-april-march.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/inventory_may-april-march.json
 
+dataMay:
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/invoices_may-april-march.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/inventory_may-april-march.json
+
+dataApr:
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/invoices_may-april-march.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/inventory_may-april-march.json
+
+dataJun: 
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/invoices_june-july.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/inventory_june-july.json
+
+dataJul: 
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/invoices_june-july.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/inventory_june-july.json
+
+dataAug: 
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/invoices_august.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/inventory_august.json
+
+dataSep: 
+  invoicesData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/invoices_september.json
+  inventoryData: /Users/mpatel/Documents/GitHub/lvs_DB/2026-27/inventory_september.json
 
 dataTest:
   customersData: /Users/mpatel/Documents/GitHub/lvs_DB/test/customers_test.json

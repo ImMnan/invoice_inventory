@@ -92,7 +92,7 @@ func TestInventoryDesignIsolation(t *testing.T) {
 			}
 		}
 	}
-	products[0].Product[0].Color["RED"][0] = 4
+	products[0].Product[0].Color["RED"][0] = 14
 	update, _ = MakeStkUpdate(&products)
 	before, _ := os.ReadFile(path)
 	if err := db.UpdateInventoryFromStockUpdate(&update); err == nil {
@@ -101,6 +101,88 @@ func TestInventoryDesignIsolation(t *testing.T) {
 	after, _ := os.ReadFile(path)
 	if string(before) != string(after) {
 		t.Fatal("failed update modified inventory")
+	}
+}
+
+func TestSalePlainStockFallback(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		design     map[string][]int
+		plain      []int
+		requested  []int
+		wantPlain  []int
+		wantDesign []int
+		wantError  bool
+	}{
+		{"missing design", nil, []int{5, 4}, []int{2, 3}, []int{3, 1}, nil, false},
+		{"missing color", map[string][]int{"blue": {5}}, []int{5}, []int{2}, []int{3}, nil, false},
+		{"size shortage", map[string][]int{"Red": {2, 4}}, []int{5, 5}, []int{3, 2}, []int{4, 5}, []int{0, 2}, false},
+		{"missing size", map[string][]int{"Red": {2}}, []int{5, 5}, []int{1, 3}, []int{5, 2}, []int{1}, false},
+		{"insufficient combined stock", map[string][]int{"Red": {2}}, []int{3}, []int{6}, nil, nil, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			stock := map[string]map[string][]int{
+				StockKey("TEE", "plain"):  {"RED": append([]int(nil), test.plain...)},
+				StockKey("TEE", "Floral"): test.design,
+			}
+			update := StockUpdate{proformaStkUpdates: map[string]map[string][]int{
+				StockKey("TEE", "Floral"): {"red": test.requested},
+			}}
+			err := update.dataCalculation(stock)
+			if (err != nil) != test.wantError {
+				t.Fatalf("error = %v, wantError = %v", err, test.wantError)
+			}
+			if test.wantError {
+				return
+			}
+			for size, want := range test.wantPlain {
+				if got := stock[StockKey("TEE", "plain")]["RED"][size]; got != want {
+					t.Fatalf("plain size %d = %d, want %d", size, got, want)
+				}
+			}
+			for size, want := range test.wantDesign {
+				if got := stock[StockKey("TEE", "Floral")]["Red"][size]; got != want {
+					t.Fatalf("design size %d = %d, want %d", size, got, want)
+				}
+			}
+		})
+	}
+}
+
+func TestInventoryPlainFallbackPreservesSaleDesign(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "inventory.json")
+	if err := os.WriteFile(path, []byte(`[{"type":"in_stock","product":[{"product_id":"TEE","print":"plain","color":{"red":[10]}},{"product_id":"TEE","print":"Floral","color":{"red":[2]}}]}]`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	products := ProductSlice{{Type: "proforma", Invoice: "SALE-1", Product: []ProductStruct{{
+		ProductID: "TEE", Print: "Floral", Color: map[string][]int{"red": {5}}, Quantity: 5,
+	}}}}
+	update, err := MakeStkUpdate(&products)
+	if err != nil {
+		t.Fatal(err)
+	}
+	db := &JsLocalDB{InventoryFile: path}
+	if err := db.UpdateInventoryFromStockUpdate(&update); err != nil {
+		t.Fatal(err)
+	}
+	entries, stock, err := db.GetExistingStock()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stock[StockKey("TEE", "plain")]["red"][0] != 7 || stock[StockKey("TEE", "Floral")]["red"][0] != 0 {
+		t.Fatalf("unexpected persisted stock: %v", stock)
+	}
+	foundSale := false
+	for _, entry := range entries {
+		if entry.Invoice == "SALE-1" {
+			foundSale = true
+			if len(entry.Product) != 1 || entry.Product[0].Print != "Floral" || entry.Product[0].Quantity != 5 || entry.Product[0].Color["red"][0] != 5 {
+				t.Fatalf("fallback changed sale history: %+v", entry)
+			}
+		}
+	}
+	if !foundSale {
+		t.Fatal("sale history missing")
 	}
 }
 

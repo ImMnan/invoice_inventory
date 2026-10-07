@@ -39,42 +39,64 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 	type productColor struct{ productID, color, printName, stockKey string }
 	impacted := make(map[string]productColor)
 
+	var products []pkg.ProductStruct
 	for _, item := range entries {
-		for _, product := range item.Product {
-			if printFilter != "" && !strings.EqualFold(pkg.NormalizePrint(product.Print), pkg.NormalizePrint(printFilter)) {
+		products = append(products, item.Product...)
+	}
+	if isSale {
+		sort.SliceStable(products, func(first, second int) bool {
+			firstPlain := pkg.NormalizePrint(products[first].Print) == "plain"
+			secondPlain := pkg.NormalizePrint(products[second].Print) == "plain"
+			if firstPlain != secondPlain {
+				return firstPlain
+			}
+			return pkg.StockKey(products[first].ProductID, products[first].Print) < pkg.StockKey(products[second].ProductID, products[second].Print)
+		})
+	}
+	for _, product := range products {
+		if printFilter != "" && !strings.EqualFold(pkg.NormalizePrint(product.Print), pkg.NormalizePrint(printFilter)) {
+			continue
+		}
+		productID := pkg.StockKey(product.ProductID, product.Print)
+		if strings.HasPrefix(product.ProductID, "JOB_") || strings.HasPrefix(product.ProductID, "TRADE-ML") {
+			continue
+		}
+		if !isSale && remainingStock[productID] == nil {
+			remainingStock[productID] = make(map[string][]int)
+		}
+		for color, quantities := range product.Color {
+			color = strings.ToLower(strings.TrimSpace(color))
+			if colorFilter != "" && !strings.EqualFold(color, strings.TrimSpace(colorFilter)) {
 				continue
 			}
-			productID := pkg.StockKey(product.ProductID, product.Print)
-			if strings.HasPrefix(product.ProductID, "JOB_") || strings.HasPrefix(product.ProductID, "TRADE-ML") {
-				continue
-			}
-			if remainingStock[productID] == nil {
-				remainingStock[productID] = make(map[string][]int)
-			}
-			for color, quantities := range product.Color {
-				color = strings.ToLower(strings.TrimSpace(color))
-				if colorFilter != "" && !strings.EqualFold(color, strings.TrimSpace(colorFilter)) {
-					continue
+			if isSale {
+				usedKeys, err := pkg.DeductStock(remainingStock, productID, color, quantities)
+				if err != nil {
+					return err
 				}
-				if remainingStock[productID][color] == nil {
-					remainingStock[productID][color] = make([]int, 8)
-				}
-				if len(remainingStock[productID][color]) < 8 {
-					padded := make([]int, 8)
-					copy(padded, remainingStock[productID][color])
-					remainingStock[productID][color] = padded
-				}
-				for i, qty := range quantities {
-					if i < len(remainingStock[productID][color]) {
-						if isSale {
-							remainingStock[productID][color][i] -= qty
-						} else {
-							remainingStock[productID][color][i] += qty
-						}
+				for _, key := range usedKeys {
+					printName := pkg.NormalizePrint(product.Print)
+					if key == pkg.StockKey(product.ProductID, "plain") {
+						printName = "plain"
 					}
+					impacted[key+"\x00"+color] = productColor{product.ProductID, color, printName, key}
 				}
-				impacted[productID+"\x00"+color] = productColor{product.ProductID, color, pkg.NormalizePrint(product.Print), productID}
+				continue
 			}
+			if remainingStock[productID][color] == nil {
+				remainingStock[productID][color] = make([]int, 8)
+			}
+			if len(remainingStock[productID][color]) < 8 {
+				padded := make([]int, 8)
+				copy(padded, remainingStock[productID][color])
+				remainingStock[productID][color] = padded
+			}
+			for i, qty := range quantities {
+				if i < len(remainingStock[productID][color]) {
+					remainingStock[productID][color][i] += qty
+				}
+			}
+			impacted[productID+"\x00"+color] = productColor{product.ProductID, color, pkg.NormalizePrint(product.Print), productID}
 		}
 	}
 	var rows []productColor

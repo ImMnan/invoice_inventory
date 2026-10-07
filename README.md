@@ -30,7 +30,15 @@ product ID. Catalog metadata is inherited, with existing stock metadata as a
 fallback for fields absent from the catalog. Purchases of an existing design
 update its color quantities without duplicating the product object. Purchase
 history remains in separate `purchase` records. An `in_stock` record is created
-only when none exists; sales cannot consume another design's stock.
+only when none exists.
+
+Sales consume the requested design first, then cover any shortage from `plain`
+stock of the same product ID, color and size. This also works when the design or
+its color is missing. Other printed designs are never used as substitutes, and
+plain sales consume only plain stock. Plain sales are allocated before design
+fallbacks. Insufficient combined stock rejects the update without saving it.
+Remaining-stock previews show the design and plain variants actually consumed;
+sale history and invoices retain the requested design.
 
 `update invoice` updates payments only. Stock quantities are updated through
 `apply`.

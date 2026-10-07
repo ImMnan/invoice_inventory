@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -36,6 +37,56 @@ func (data *JsLocalDB) Stocks() ([]byte, error) {
 	return stockData, nil
 }
 
+func DeductStock(currentStock map[string]map[string][]int, stockKey, color string, quantities []int) ([]string, error) {
+	quantities = append([]int(nil), quantities...)
+	productID, _, _ := strings.Cut(stockKey, "\x00")
+	keys := []string{stockKey}
+	plainKey := StockKey(productID, "plain")
+	if plainKey != stockKey {
+		keys = append(keys, plainKey)
+	}
+	stockColors := make([]string, len(keys))
+	for index, key := range keys {
+		for stockColor := range currentStock[key] {
+			if strings.EqualFold(stockColor, strings.TrimSpace(color)) {
+				stockColors[index] = stockColor
+				break
+			}
+		}
+	}
+	for size, requested := range quantities {
+		available := 0
+		for index, key := range keys {
+			stock := currentStock[key][stockColors[index]]
+			if size < len(stock) && stock[size] > 0 {
+				available += stock[size]
+			}
+		}
+		if requested > available {
+			return nil, fmt.Errorf("not enough stock for %s %s size %d (including plain stock). available: %d, requested: %d",
+				strings.ReplaceAll(stockKey, "\x00", " design "), color, size, available, requested)
+		}
+	}
+	var usedKeys []string
+	for index, key := range keys {
+		stock := currentStock[key][stockColors[index]]
+		used := false
+		for size, requested := range quantities {
+			if size >= len(stock) || requested <= 0 || stock[size] <= 0 {
+				continue
+			}
+			deduct := min(stock[size], requested)
+			stock[size] -= deduct
+			quantities[size] -= deduct
+			used = true
+		}
+		if used {
+			usedKeys = append(usedKeys, key)
+		}
+	}
+	return usedKeys, nil
+}
+
 func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]int) error {
 
 	if stkUp.proformaStkUpdates == nil && stkUp.purchaseStkUpdates == nil {
@@ -43,45 +94,23 @@ func (stkUp *StockUpdate) dataCalculation(currentStock map[string]map[string][]i
 	}
 	// Process proforma stock updates (subtract quantities)
 	if stkUp.proformaStkUpdates != nil {
-		for productUID, colors := range stkUp.proformaStkUpdates {
-			productLabel := strings.ReplaceAll(productUID, "\x00", " design ")
-			if currentStock[productUID] != nil {
-				for color, subtractQuantities := range colors {
-					// Try to find matching color (case-insensitive)
-					var matchingStockColor string
-					found := false
-
-					for stockColor := range currentStock[productUID] {
-						if strings.EqualFold(stockColor, color) {
-							matchingStockColor = stockColor
-							found = true
-							break
-						}
-					}
-
-					if found {
-						// Directly modify the slice in currentStock
-						stockQuantities := currentStock[productUID][matchingStockColor]
-						for i, subtractQty := range subtractQuantities {
-							if i < len(stockQuantities) {
-								if stockQuantities[i] >= subtractQty {
-									stockQuantities[i] -= subtractQty
-									// Uncomment for debugging
-									//fmt.Printf("Subtracting %d from %s %s size %d: %d -> %d\n", subtractQty, productUID, color, i, stockQuantities[i]+subtractQty, stockQuantities[i])
-								} else {
-									return fmt.Errorf("\nerror: not enough stock for %s %s size %d. available: %d, requested: %d",
-										productLabel, color, i, stockQuantities[i], subtractQty)
-								}
-							}
-						}
-						// No need to reassign since we modified the original slice
-					} else {
-						return fmt.Errorf("\nerror: color '%s' not found in existing stock for product %s", color, productLabel)
-					}
+		keys := make([]string, 0, len(stkUp.proformaStkUpdates))
+		for key := range stkUp.proformaStkUpdates {
+			keys = append(keys, key)
+		}
+		sort.Slice(keys, func(first, second int) bool {
+			_, firstPrint, _ := strings.Cut(keys[first], "\x00")
+			_, secondPrint, _ := strings.Cut(keys[second], "\x00")
+			if (firstPrint == "plain") != (secondPrint == "plain") {
+				return firstPrint == "plain"
+			}
+			return keys[first] < keys[second]
+		})
+		for _, key := range keys {
+			for color, quantities := range stkUp.proformaStkUpdates[key] {
+				if _, err := DeductStock(currentStock, key, color, quantities); err != nil {
+					return err
 				}
-			} else {
-				// New product - check if we're trying to subtract from non-existent stock
-				return fmt.Errorf("\nerror: product '%s' not found in existing stock", productLabel)
 			}
 		}
 	}

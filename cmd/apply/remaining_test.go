@@ -18,14 +18,17 @@ func TestRemainingStockDesignIsolation(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, test := range []struct {
-		name, rowType, quantity string
-		isSale                  bool
+		name, rowType, printName, rowPrint, quantity, plainQuantity string
+		requested                                                   int
+		isSale                                                      bool
 	}{
-		{"sale", "proforma", "3", true},
-		{"purchase", "purchase-invoice", "7", false},
+		{"sale", "proforma", "Floral", "Floral", "3", "", 2, true},
+		{"purchase", "purchase-invoice", "Floral", "Floral", "7", "", 2, false},
+		{"missing design", "proforma", "Stripes", "plain", "8", "", 2, true},
+		{"design shortage", "proforma", "Floral", "Floral", "0", "8", 7, true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			products := pkg.ProductSlice{{Type: test.rowType, Product: []pkg.ProductStruct{{ProductID: "TEE", Print: "Floral", Color: map[string][]int{"red": {2}}}}}}
+			products := pkg.ProductSlice{{Type: test.rowType, Product: []pkg.ProductStruct{{ProductID: "TEE", Print: test.printName, Color: map[string][]int{"red": {test.requested}}}}}}
 			update, err := pkg.MakeStkUpdate(&products)
 			if err != nil {
 				t.Fatal(err)
@@ -37,7 +40,7 @@ func TestRemainingStockDesignIsolation(t *testing.T) {
 			stdout := os.Stdout
 			os.Stdout = writer
 			defer func() { os.Stdout = stdout }()
-			err = displayRemainingStock(&pkg.JsLocalDB{InventoryFile: path}, update, test.isSale, "RED", "floral", true)
+			err = displayRemainingStock(&pkg.JsLocalDB{InventoryFile: path}, update, test.isSale, "RED", test.printName, true)
 			writer.Close()
 			os.Stdout = stdout
 			output, readErr := io.ReadAll(reader)
@@ -50,8 +53,15 @@ func TestRemainingStockDesignIsolation(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(rows) != 3 || rows[1][1] != "Floral" || rows[1][3] != test.quantity || rows[1][11] != test.quantity {
+			wantRows := 3
+			if test.plainQuantity != "" {
+				wantRows = 4
+			}
+			if len(rows) != wantRows || rows[1][1] != test.rowPrint || rows[1][3] != test.quantity || rows[1][11] != test.quantity {
 				t.Fatalf("unexpected remaining stock: %s", output)
+			}
+			if test.plainQuantity != "" && (rows[2][1] != "plain" || rows[2][3] != test.plainQuantity) {
+				t.Fatalf("unexpected plain remaining stock: %s", output)
 			}
 			stored, err := os.ReadFile(path)
 			if err != nil || string(stored) != original {
