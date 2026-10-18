@@ -72,3 +72,66 @@ Transactions without labels have an empty label cell. Without the flag, the
 column is omitted. `--csv` produces CSV including a header.
 Filtering preserves each transaction's
 stored closing balance; it does not recalculate balances.
+
+### Applying bank statements
+
+Use `--hdfc` to explicitly select the HDFC transaction importer. Without a bank
+flag, `apply` uses the existing sale/purchase stock/invoice importer; it does not
+detect banks from CSV headers or file names.
+Required HDFC columns are `Date`, `Narration`, `Debit Amount`, `Credit Amount`,
+`Chq/Ref Number`, and `Closing Balance`. Headers are case-insensitive and
+surrounding padding is ignored; extra columns such as `Value Dat` are ignored.
+
+```sh
+lvs apply -f transaction-oct.csv --hdfc
+lvs apply -f transaction-oct.csv --hdfc --approve
+lvs apply -f transaction-sep.csv --hdfc -m 9 --approve
+```
+
+Without `--approve`, this previews only new transactions, their assigned IDs,
+and the selected destination. `--csv` produces the preview as CSV. Omitted
+`-m` or `-m 0` selects `data.transactionData` (the configured working month),
+not the calendar month or the month in the file name. `-m 1` through `-m 12`
+selects the corresponding monthly section; `-m 13` selects `dataTest`.
+Configure `transactionData` in each section you use. Missing configuration
+is an error. A missing destination file is created on approval; its parent
+directory must already exist. An existing destination must contain a JSON array
+(`[]` is valid); malformed, empty, or `null` files are rejected.
+
+Bank formats implement `pkg.TransactionStatement` through
+`Parse(io.Reader) ([]pkg.BankTransaction, error)`. `pkg.TransactionHDFC` implements
+the HDFC format. Future banks and financial institutions can implement the same
+interface and add an explicit CLI flag, reusing the preview, duplicate detection,
+ID assignment, and safe persistence pipeline. Only HDFC is currently supported.
+
+Statement dates use `DD/MM/YY` and are stored as `YYYY-MM-DD`. Narration is kept
+with surrounding padding removed. `UPI-` and `REV-UPI-` narrations use mode
+`UPI`; cash narrations beginning with `CASH` use `CASH`; everything else uses
+`NETB`. Imported `invoiceIds`, `label`, and `for` are empty arrays; `title` and
+`notes` are empty strings. Amounts remain JSON numbers and retain exact cents;
+blank debit/credit cells mean zero. Blank closing balances, fractional cents,
+invalid amounts/dates, out-of-order rows, and discontinuous balances are errors.
+In Go, transaction amounts use `pkg.Money`, an integer count of cents; use
+`pkg.ParseMoney` for currency-unit input and `Money.String` for display.
+
+Reference numbers retain leading zeros. All-zero references receive a stable
+15-digit nonzero numeric ID. If distinct transactions reuse a nonzero reference
+(for example, a payment and its reversal), the first retains the reference and
+the next receives a deterministic suffix. Generated ID collisions reject the
+import instead of silently replacing a transaction.
+
+Repeat imports do not write the destination. Overlapping statements are matched
+as an ordered sequence using date, narration, debit, credit, closing balance,
+and reference where available; only the new suffix is appended. Previously
+imported older subsets are skipped. If there is no overlap, a new-only statement
+must continue from the destination's last date and balance. Conflicting or
+ambiguous overlap is rejected; supply a statement with more surrounding rows
+to establish continuity. Importing does not backfill or replace existing records.
+
+Existing records, annotations, and additional JSON fields are preserved.
+Approved imports write to a temporary file in the destination directory and
+atomically replace the JSON array, preserving file permissions. A per-destination
+`.lock` file prevents simultaneous LVS transaction imports, and the destination
+is rechecked before replacement. If an interrupted process leaves a lock behind,
+confirm no import is running before removing that specific lock and retrying.
+No stock or invoice files are changed by a transaction import.

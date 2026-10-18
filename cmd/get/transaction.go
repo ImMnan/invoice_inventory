@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 
@@ -91,8 +90,8 @@ func writeTransactions(output io.Writer, transactions []pkg.Transactions, option
 		}
 		row := []string{
 			txn.Id, strings.Join(txn.InvoiceIds, ", "), txn.Date, txn.Narration,
-			txn.Title, txn.Mode, strconv.Itoa(txn.Debit), strconv.Itoa(txn.Credit),
-			strconv.Itoa(txn.ClosingBalance), strings.Join(txn.For, ", "),
+			txn.Title, txn.Mode, txn.Debit.String(), txn.Credit.String(),
+			txn.ClosingBalance.String(), strings.Join(txn.For, ", "),
 		}
 		if options.ShowLabels {
 			var labels []string

@@ -18,11 +18,11 @@ import (
 
 func transactionFixtures() []pkg.Transactions {
 	return []pkg.Transactions{
-		{Id: "opening", Credit: 100000, ClosingBalance: 100000},
+		{Id: "opening", Credit: 10000000, ClosingBalance: 10000000},
 		{
 			Id: "sale", InvoiceIds: []string{"INV-1", "INV-2"},
 			Date: "2026-10-20", Narration: "Payment", Title: "Sale, \"goods\"\nreceived",
-			Mode: "UPI", Credit: 50000, ClosingBalance: 150000,
+			Mode: "UPI", Credit: 5000000, ClosingBalance: 15000000,
 			Label: []string{"sales", " CO180G-SRS ", ""}, For: []string{"Ankit", "Madhavbhai"},
 		},
 		{Id: "expense", InvoiceIds: []string{"INV-3"}, Label: []string{"Sales", "expense"}, For: []string{"Other"}},
@@ -79,6 +79,27 @@ func TestTransactionCSV(t *testing.T) {
 	}
 	if rows[1][1] != "" || rows[1][9] != "" {
 		t.Fatalf("empty invoice and recipient arrays rendered incorrectly: %v", rows[1])
+	}
+}
+
+func TestTransactionDecimalOutput(t *testing.T) {
+	for _, narrationKey := range []string{"narration", "Narration"} {
+		input := `[{"id":"bank","date":"2026-10-01","` + narrationKey + `":"UPI-PAYMENT","debit":0,"credit":10.25,"closingBalance":110.25}]`
+		var transactions []pkg.Transactions
+		if err := json.Unmarshal([]byte(input), &transactions); err != nil {
+			t.Fatal(err)
+		}
+		var output bytes.Buffer
+		if err := writeTransactions(&output, transactions, transactionOptions{CSV: true}); err != nil {
+			t.Fatal(err)
+		}
+		rows, err := csv.NewReader(&output).ReadAll()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if rows[1][3] != "UPI-PAYMENT" || rows[1][6] != "0" || rows[1][7] != "10.25" || rows[1][8] != "110.25" {
+			t.Fatalf("incorrect decimal output: %q", rows[1])
+		}
 	}
 }
 

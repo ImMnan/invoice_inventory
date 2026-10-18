@@ -91,16 +91,16 @@ type Customers struct {
 type Transactions struct {
 	Id             string   `json:"id"`
 	InvoiceIds     []string `json:"invoiceIds"`
-	Date           string   `json:"date,omitempty"`
-	Narration      string   `json:"Narration,omitempty"`
-	Title          string   `json:"title,omitempty"`
+	Date           string   `json:"date"`
+	Narration      string   `json:"narration"`
+	Title          string   `json:"title"`
 	Mode           string   `json:"mode"`
-	Debit          int      `json:"debit"`
-	Credit         int      `json:"credit"`
-	ClosingBalance int      `json:"closingBalance"`
+	Debit          Money    `json:"debit"`
+	Credit         Money    `json:"credit"`
+	ClosingBalance Money    `json:"closingBalance"`
 	Label          []string `json:"label"`
 	For            []string `json:"for"`
-	Notes          string   `json:"notes,omitempty"`
+	Notes          string   `json:"notes"`
 }
 
 // DisplayName returns whichever name field is populated.

@@ -12,32 +12,49 @@ import (
 )
 
 // applyCMD represents the get command
-var ApplyCmd = &cobra.Command{
-	Use:   "apply",
-	Short: "Use get command for applying the resources to the Database",
-	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		file, _ := cmd.Flags().GetString("file")
-		approve, _ := cmd.Flags().GetBool("approve")
-		formatCsv, _ := cmd.Flags().GetBool("csv")
-		month, _ := cmd.Flags().GetInt("month")
-		colorFilter, _ := cmd.Flags().GetString("color")
-		printFilter, _ := cmd.Flags().GetString("print")
-		if file != "" {
-			applyStkInvoice(file, approve, formatCsv, month, colorFilter, printFilter)
-		} else {
-			cmd.Help()
-		}
-	},
-}
+var ApplyCmd = ApplyCommand()
 
-func init() {
-	ApplyCmd.Flags().StringP("file", "f", "", "File to apply changes from")
-	ApplyCmd.Flags().Bool("approve", false, "[!] Approve the changes")
-	ApplyCmd.Flags().Bool("csv", false, "Output in CSV format")
-	ApplyCmd.Flags().IntP("month", "m", 0, "Month to apply changes for")
-	ApplyCmd.Flags().StringP("color", "c", "", "Filter by color (shows count without --approve)")
-	ApplyCmd.Flags().String("print", "", "Filter preview by design name (does not limit --approve)")
+func ApplyCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "apply",
+		Short: "Use get command for applying the resources to the Database",
+		Long:  ``,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			file, _ := cmd.Flags().GetString("file")
+			approve, _ := cmd.Flags().GetBool("approve")
+			formatCsv, _ := cmd.Flags().GetBool("csv")
+			month, _ := cmd.Flags().GetInt("month")
+			colorFilter, _ := cmd.Flags().GetString("color")
+			printFilter, _ := cmd.Flags().GetString("print")
+			hdfc, _ := cmd.Flags().GetBool("hdfc")
+			if month < 0 || month > 13 {
+				return fmt.Errorf("month must be between 0 and 13 (0: working month, 1-12: calendar month, 13: test)")
+			}
+			if file != "" {
+				if hdfc {
+					if colorFilter != "" || printFilter != "" {
+						return fmt.Errorf("--color and --print are only supported for stock/invoice CSVs")
+					}
+					return applyTransactions(cmd.OutOrStdout(), file, approve, formatCsv, month, pkg.TransactionHDFC{})
+				}
+				applyStkInvoice(file, approve, formatCsv, month, colorFilter, printFilter)
+			} else {
+				if hdfc {
+					return fmt.Errorf("--file is required with --hdfc")
+				}
+				return cmd.Help()
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringP("file", "f", "", "File to apply changes from")
+	cmd.Flags().Bool("approve", false, "[!] Approve the changes")
+	cmd.Flags().Bool("hdfc", false, "Apply an HDFC bank transaction CSV")
+	cmd.Flags().Bool("csv", false, "Output in CSV format")
+	cmd.Flags().IntP("month", "m", 0, "Month to apply changes for (0: configured working month)")
+	cmd.Flags().StringP("color", "c", "", "Filter by color (shows count without --approve)")
+	cmd.Flags().String("print", "", "Filter preview by design name (does not limit --approve)")
+	return cmd
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
