@@ -60,13 +60,19 @@ lvs get transaction
 lvs get transaction -o wide
 lvs get transaction SK25CPQ10303 --label sales --for Ankit
 lvs get transaction -l sales -f Ankit --csv
+lvs get txn -l ops -l fuel
+lvs get txn -l ops,fuel
 lvs get transaction --show-labels
 lvs get transaction --for Ankit --show-labels --csv
 ```
 
 Invoice, label, and recipient filters combine with AND. Invoice IDs match
 exactly; labels and recipients use case-insensitive exact matching with
-surrounding whitespace ignored. Any matching array entry satisfies its filter.
+surrounding whitespace ignored. Repeat `-l` or use comma-separated labels to
+require every requested label on the same transaction (AND, not OR).
+For example, `-l ops,fuel` requires both `ops` and `fuel`, but permits additional
+labels. Keep labels in flag values: `-l ops fuel` treats `fuel` as an invoice ID.
+Any matching recipient array entry satisfies the `--for` filter.
 `--show-labels` adds a `LABEL` column to both table and CSV output, showing each
 transaction's nonblank labels separated by commas in their stored order.
 Transactions without labels have an empty label cell. Without the flag, the
