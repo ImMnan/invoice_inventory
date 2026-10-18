@@ -258,8 +258,12 @@ func (filter TransactionFilter) matches(transaction pkg.Transactions) bool {
 	if filter.InvoiceID != "" && !slices.Contains(transaction.InvoiceIds, filter.InvoiceID) {
 		return false
 	}
-	return matchesTransactionField(transaction.Label, filter.Label) &&
-		matchesTransactionField(transaction.For, filter.For)
+	for _, label := range filter.Label {
+		if !matchesTransactionField(transaction.Label, label) {
+			return false
+		}
+	}
+	return matchesTransactionField(transaction.For, filter.For)
 }
 
 func matchesTransactionField(values []string, query string) bool {

@@ -38,13 +38,17 @@ func TestTransactionFilter(t *testing.T) {
 		{"all", TransactionFilter{}, []string{"opening", "sale", "expense"}},
 		{"second invoice", TransactionFilter{InvoiceID: "INV-2"}, []string{"sale"}},
 		{"exact invoice", TransactionFilter{InvoiceID: "INV"}, nil},
-		{"label case and whitespace", TransactionFilter{Label: " SALES "}, []string{"sale", "expense"}},
-		{"second label", TransactionFilter{Label: "co180g-srs"}, []string{"sale"}},
-		{"exact label", TransactionFilter{Label: "sale"}, nil},
+		{"label case and whitespace", TransactionFilter{Label: []string{" SALES "}}, []string{"sale", "expense"}},
+		{"second label", TransactionFilter{Label: []string{"co180g-srs"}}, []string{"sale"}},
+		{"exact label", TransactionFilter{Label: []string{"sale"}}, nil},
+		{"all labels", TransactionFilter{Label: []string{"sales", "co180g-srs"}}, []string{"sale"}},
+		{"missing one label", TransactionFilter{Label: []string{"sales", "missing"}}, nil},
+		{"labels on separate transactions", TransactionFilter{Label: []string{"expense", "co180g-srs"}}, nil},
+		{"duplicate labels", TransactionFilter{Label: []string{"sales", " SALES "}}, []string{"sale", "expense"}},
 		{"second recipient", TransactionFilter{For: " MADHAVBHAI "}, []string{"sale"}},
 		{"exact recipient", TransactionFilter{For: "An"}, nil},
-		{"combined", TransactionFilter{InvoiceID: "INV-2", Label: "SALES", For: "ankit"}, []string{"sale"}},
-		{"combined mismatch", TransactionFilter{Label: "sales", For: "Nobody"}, nil},
+		{"combined", TransactionFilter{InvoiceID: "INV-2", Label: []string{"SALES", "co180g-srs"}, For: "ankit"}, []string{"sale"}},
+		{"combined mismatch", TransactionFilter{Label: []string{"sales"}, For: "Nobody"}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -61,6 +65,46 @@ func TestTransactionFilter(t *testing.T) {
 	}
 }
 
+func TestTransactionMultipleLabelFlags(t *testing.T) {
+	transactions := []pkg.Transactions{
+		{Id: "both", InvoiceIds: []string{"INV"}, Label: []string{"ops", "fuel", "extra"}},
+		{Id: "ops-only", InvoiceIds: []string{"INV"}, Label: []string{"ops"}},
+		{Id: "fuel-only", InvoiceIds: []string{"INV"}, Label: []string{"fuel"}},
+		{Id: "neither", InvoiceIds: []string{"INV"}},
+	}
+	for _, args := range [][]string{
+		{"-l", "ops", "-l", "fuel"},
+		{"-l", "ops,fuel"},
+		{"--label", " OPS ", "--label", "FUEL"},
+		{"-l", "ops", "--label", "fuel,extra"},
+	} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			cmd := TransactionCommand()
+			if err := cmd.ParseFlags(args); err != nil {
+				t.Fatal(err)
+			}
+			labels, err := cmd.Flags().GetStringSlice("label")
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, asCSV := range []bool{false, true} {
+				var output bytes.Buffer
+				options := transactionOptions{Filter: TransactionFilter{Label: labels}, CSV: asCSV}
+				if err := writeTransactions(&output, transactions, options); err != nil {
+					t.Fatal(err)
+				}
+				if !strings.Contains(output.String(), "both") {
+					t.Fatalf("matching transaction excluded: %s", output.String())
+				}
+				for _, excluded := range []string{"ops-only", "fuel-only", "neither"} {
+					if strings.Contains(output.String(), excluded) {
+						t.Fatalf("transaction %q included: %s", excluded, output.String())
+					}
+				}
+			}
+		})
+	}
+}
 func TestTransactionCSV(t *testing.T) {
 	var output bytes.Buffer
 	if err := writeTransactions(&output, transactionFixtures(), transactionOptions{CSV: true, Output: "wide"}); err != nil {
@@ -197,9 +241,9 @@ func TestTransactionLabels(t *testing.T) {
 		{"all", TransactionFilter{}, []string{"", "sales, CO180G-SRS", "Sales, expense", ""}},
 		{"recipient", TransactionFilter{For: "Ankit"}, []string{"sales, CO180G-SRS"}},
 		{"invoice", TransactionFilter{InvoiceID: "INV-3"}, []string{"Sales, expense"}},
-		{"label", TransactionFilter{Label: "expense"}, []string{"Sales, expense"}},
+		{"label", TransactionFilter{Label: []string{"expense"}}, []string{"Sales, expense"}},
 		{"no labels", TransactionFilter{InvoiceID: "EMPTY"}, []string{""}},
-		{"no match", TransactionFilter{Label: "missing"}, nil},
+		{"no match", TransactionFilter{Label: []string{"missing"}}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -310,6 +354,8 @@ func TestTransactionCommand(t *testing.T) {
 		wantErr string
 	}{
 		{args: []string{"INV-2", "-l", "SALES", "-f", "ankit", "--csv", "-m", "10"}, want: "INV-1, INV-2"},
+		{args: []string{"INV-2", "-l", "sales", "-l", "co180g-srs", "--csv"}, want: "INV-1, INV-2"},
+		{args: []string{"INV-2", "-l", "sales,co180g-srs", "--csv"}, want: "INV-1, INV-2"},
 		{args: []string{"-o", "wide", "--csv"}, want: "ID,INVOICE,DATE,NARRATION"},
 		{args: []string{"--output", "wide"}, want: "ID"},
 		{args: []string{"-o", "invalid"}, wantErr: "unsupported output"},

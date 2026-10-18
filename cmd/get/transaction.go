@@ -14,7 +14,7 @@ import (
 
 type TransactionFilter struct {
 	InvoiceID string
-	Label     string
+	Label     []string
 	For       string
 }
 
@@ -46,7 +46,7 @@ func TransactionCommand() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&options.CSV, "csv", false, "Output in CSV format")
 	cmd.Flags().StringVarP(&options.Output, "output", "o", "", "Use wide to show complete narration")
-	cmd.Flags().StringVarP(&options.Filter.Label, "label", "l", "", "Filter transactions by label")
+	cmd.Flags().StringSliceVarP(&options.Filter.Label, "label", "l", nil, "Require all labels (comma-separated or repeated)")
 	cmd.Flags().StringVarP(&options.Filter.For, "for", "f", "", "Filter transactions by 'for' field")
 	cmd.Flags().BoolVar(&options.ShowLabels, "show-labels", false, "Show a label column for matching transactions")
 	cmd.Flags().IntVarP(&options.Month, "month", "m", 0, "Month to fetch transactions for (default is current month)")
