@@ -1,0 +1,30 @@
+[
+    {
+        "id": "83ddc044-d596-4b1b-ad61-f449a7064ce0",
+        "invoiceIds": ["SKDEPOSIT10"],
+        "date": "2026-10-01",
+        "narration": "",
+        "title": "Opening Balance - carry forward",
+        "mode": "Cash",
+        "debit": 0,
+        "credit": 100000,
+        "closingBalance": 100000,
+        "label": [],
+        "for": [],
+        "notes": "Carried forward balance from previous month"
+    },
+    {
+        "id": "b872bacf-5cfa-4cff-b85f-98183d459800",
+        "invoiceIds": ["SK25CPQ10303", "SK25CPQ10311"],
+        "date": "2026-10-20",
+        "narration": "",
+        "title": "Sale of goods",
+        "mode": "UPI",
+        "debit": 0,
+        "credit": 50000,
+        "closingBalance": 150000,
+        "label": ["sales", "CO180G-SRS"],
+        "for": ["Ankit", "Madhavbhai"],
+        "notes": "Sales payment received"
+    }
+]

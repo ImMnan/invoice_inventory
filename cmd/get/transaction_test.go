@@ -1,0 +1,247 @@
+package get
+
+import (
+	"bytes"
+	"encoding/csv"
+	"encoding/json"
+	"errors"
+	"io"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
+	"testing"
+
+	"github.com/immnan/invoice_invoice/pkg"
+)
+
+func transactionFixtures() []pkg.Transactions {
+	return []pkg.Transactions{
+		{Id: "opening", Credit: 100000, ClosingBalance: 100000},
+		{
+			Id: "sale", InvoiceIds: []string{"INV-1", "INV-2"},
+			Date: "2026-10-20", Narration: "Payment", Title: "Sale, \"goods\"\nreceived",
+			Mode: "UPI", Credit: 50000, ClosingBalance: 150000,
+			Label: []string{"sales", " CO180G-SRS ", ""}, For: []string{"Ankit", "Madhavbhai"},
+		},
+		{Id: "expense", InvoiceIds: []string{"INV-3"}, Label: []string{"Sales", "expense"}, For: []string{"Other"}},
+	}
+}
+
+func TestTransactionFilter(t *testing.T) {
+	tests := []struct {
+		name   string
+		filter TransactionFilter
+		want   []string
+	}{
+		{"all", TransactionFilter{}, []string{"opening", "sale", "expense"}},
+		{"second invoice", TransactionFilter{InvoiceID: "INV-2"}, []string{"sale"}},
+		{"exact invoice", TransactionFilter{InvoiceID: "INV"}, nil},
+		{"label case and whitespace", TransactionFilter{Label: " SALES "}, []string{"sale", "expense"}},
+		{"second label", TransactionFilter{Label: "co180g-srs"}, []string{"sale"}},
+		{"exact label", TransactionFilter{Label: "sale"}, nil},
+		{"second recipient", TransactionFilter{For: " MADHAVBHAI "}, []string{"sale"}},
+		{"exact recipient", TransactionFilter{For: "An"}, nil},
+		{"combined", TransactionFilter{InvoiceID: "INV-2", Label: "SALES", For: "ankit"}, []string{"sale"}},
+		{"combined mismatch", TransactionFilter{Label: "sales", For: "Nobody"}, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got []string
+			for _, txn := range transactionFixtures() {
+				if tt.filter.matches(txn) {
+					got = append(got, txn.Id)
+				}
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("matched %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTransactionCSV(t *testing.T) {
+	var output bytes.Buffer
+	if err := writeTransactions(&output, transactionFixtures(), transactionOptions{CSV: true}); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := csv.NewReader(&output).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 4 || len(rows[0]) != 10 {
+		t.Fatalf("unexpected CSV shape: %v", rows)
+	}
+	want := []string{"sale", "INV-1, INV-2", "2026-10-20", "Payment", "Sale, \"goods\"\nreceived", "UPI", "0", "50000", "150000", "Ankit, Madhavbhai"}
+	if !reflect.DeepEqual(rows[2], want) {
+		t.Fatalf("CSV row = %q, want %q", rows[2], want)
+	}
+	if rows[1][1] != "" || rows[1][9] != "" {
+		t.Fatalf("empty invoice and recipient arrays rendered incorrectly: %v", rows[1])
+	}
+}
+
+func TestTransactionLabels(t *testing.T) {
+	tests := []struct {
+		name   string
+		filter TransactionFilter
+		want   []string
+	}{
+		{"all", TransactionFilter{}, []string{"", "sales, CO180G-SRS", "Sales, expense", ""}},
+		{"recipient", TransactionFilter{For: "Ankit"}, []string{"sales, CO180G-SRS"}},
+		{"invoice", TransactionFilter{InvoiceID: "INV-3"}, []string{"Sales, expense"}},
+		{"label", TransactionFilter{Label: "expense"}, []string{"Sales, expense"}},
+		{"no labels", TransactionFilter{InvoiceID: "EMPTY"}, []string{""}},
+		{"no match", TransactionFilter{Label: "missing"}, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			transactions := append(transactionFixtures(), pkg.Transactions{Id: "no-labels", InvoiceIds: []string{"EMPTY"}})
+			for i := range transactions {
+				transactions[i].Title = strings.ReplaceAll(transactions[i].Title, "\n", " ")
+			}
+			for _, asCSV := range []bool{false, true} {
+				var output bytes.Buffer
+				options := transactionOptions{Filter: tt.filter, CSV: asCSV, ShowLabels: true}
+				if err := writeTransactions(&output, transactions, options); err != nil {
+					t.Fatal(err)
+				}
+				var baseline bytes.Buffer
+				options.ShowLabels = false
+				if err := writeTransactions(&baseline, transactions, options); err != nil {
+					t.Fatal(err)
+				}
+				if !asCSV {
+					lines := strings.Split(strings.TrimSuffix(output.String(), "\n"), "\n")
+					if len(lines) != len(tt.want)+1 || !strings.HasSuffix(lines[0], "LABEL") {
+						t.Fatalf("unexpected table shape: %q", output.String())
+					}
+					for i, label := range tt.want {
+						if !strings.HasSuffix(strings.TrimRight(lines[i+1], " "), label) {
+							t.Fatalf("row %d missing label cell %q: %q", i, label, lines[i+1])
+						}
+					}
+					continue
+				}
+				rows, err := csv.NewReader(&output).ReadAll()
+				if err != nil {
+					t.Fatal(err)
+				}
+				transactionRows, err := csv.NewReader(&baseline).ReadAll()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(rows) != len(transactionRows) || len(rows) != len(tt.want)+1 {
+					t.Fatalf("unexpected CSV row count: %v", rows)
+				}
+				for i, row := range rows {
+					label := "LABEL"
+					if i > 0 {
+						label = tt.want[i-1]
+					}
+					want := append(transactionRows[i], label)
+					if !reflect.DeepEqual(row, want) {
+						t.Fatalf("row = %q, want %q", row, want)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestTransactionTable(t *testing.T) {
+	var output bytes.Buffer
+	options := transactionOptions{Filter: TransactionFilter{InvoiceID: "INV-2"}}
+	if err := writeTransactions(&output, transactionFixtures(), options); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"ID", "INVOICE", "sale", "INV-1, INV-2", "Ankit, Madhavbhai", "150000"} {
+		if !strings.Contains(output.String(), want) {
+			t.Fatalf("output missing %q: %s", want, output.String())
+		}
+	}
+	if strings.Contains(output.String(), "opening") || strings.Contains(output.String(), "expense") {
+		t.Fatalf("nonmatching transactions included: %s", output.String())
+	}
+}
+
+type failingTransactionWriter struct{}
+
+func (failingTransactionWriter) Write([]byte) (int, error) {
+	return 0, io.ErrClosedPipe
+}
+
+func TestTransactionOutputErrors(t *testing.T) {
+	for _, asCSV := range []bool{false, true} {
+		err := writeTransactions(failingTransactionWriter{}, transactionFixtures(), transactionOptions{CSV: asCSV})
+		if !errors.Is(err, io.ErrClosedPipe) {
+			t.Fatalf("csv=%v: error = %v, want closed pipe", asCSV, err)
+		}
+	}
+}
+
+func TestTransactionCommand(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	t.Chdir(dir)
+	data, err := json.Marshal(transactionFixtures())
+	if err != nil {
+		t.Fatal(err)
+	}
+	transactionPath := filepath.Join(dir, "transactions.json")
+	if err := os.WriteFile(transactionPath, data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	config := "data:\n  transactionData: " + strconv.Quote(transactionPath) + "\n"
+	config += "dataOct:\n  transactionData: " + strconv.Quote(transactionPath) + "\n"
+	if err := os.WriteFile(filepath.Join(dir, "lvsConfig.yaml"), []byte(config), 0600); err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		args    []string
+		want    string
+		wantErr string
+	}{
+		{args: []string{"INV-2", "-l", "SALES", "-f", "ankit", "--csv", "-m", "10"}, want: "INV-1, INV-2"},
+		{args: []string{"--label", "sales", "--for", "Ankit", "--show-labels", "--csv"}, want: "\"Ankit, Madhavbhai\",\"sales, CO180G-SRS\"\n"},
+		{args: []string{"--month", "-1"}, wantErr: "month must be"},
+		{args: []string{"--month", "14"}, wantErr: "month must be"},
+		{args: []string{"--month", "1"}, wantErr: "transactionData is not configured"},
+		{args: []string{"INV-1", "INV-2"}, wantErr: "accepts at most 1 arg"},
+	}
+	for _, tt := range tests {
+		t.Run(strings.Join(tt.args, " "), func(t *testing.T) {
+			cmd := TransactionCommand()
+			var output bytes.Buffer
+			cmd.SetOut(&output)
+			cmd.SetErr(&output)
+			cmd.SetArgs(tt.args)
+			err := cmd.Execute()
+			if tt.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("error = %v, want %q", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(output.String(), tt.want) {
+				t.Fatalf("output = %q, want %q", output.String(), tt.want)
+			}
+		})
+	}
+	if err := os.WriteFile(transactionPath, []byte("{invalid"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := printTransactions(io.Discard, transactionOptions{}); err == nil {
+		t.Fatal("invalid JSON should return an error")
+	}
+	if err := os.Remove(transactionPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := printTransactions(io.Discard, transactionOptions{}); err == nil {
+		t.Fatal("missing transaction file should return an error")
+	}
+}

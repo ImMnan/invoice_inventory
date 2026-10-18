@@ -60,7 +60,7 @@ func init() {
 
 func getInvoices(formatCsv, unPaid bool, month int, customer string) {
 
-	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month)
+	inventoryDB, customerDB, invoiceDB, productDB, _, err := ConfigData(month)
 	if err != nil {
 		fmt.Println("Error fetching config data:", err)
 		return
@@ -161,7 +161,7 @@ func PrintInvoice(formatCsv bool, invoiceID []string, month int) error {
 
 	var invoices []pkg.Invoice
 
-	_, _, invoiceDB, _, err := ConfigData(month)
+	_, _, invoiceDB, _, _, err := ConfigData(month)
 	if err != nil {
 		return err
 	}

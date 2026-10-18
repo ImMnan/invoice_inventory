@@ -52,7 +52,6 @@ type ProductStruct struct {
 }
 
 type ProductSlice []TshirtStruct
-
 type Proforma = TshirtStruct
 type Purchase = TshirtStruct
 type Jobwork = TshirtStruct
@@ -70,10 +69,11 @@ type ManualData struct {
 }
 
 type JsLocalDB struct {
-	InventoryFile string
-	CustomerFile  string
-	InvoiceFile   string
-	ProductFile   string
+	InventoryFile   string
+	CustomerFile    string
+	InvoiceFile     string
+	ProductFile     string
+	TransactionFile string
 }
 
 type Customers struct {
@@ -86,6 +86,21 @@ type Customers struct {
 	Address      string `json:"address"`
 	GST          string `json:"gst_number"`
 	Origin       int    `json:"origin"`
+}
+
+type Transactions struct {
+	Id             string   `json:"id"`
+	InvoiceIds     []string `json:"invoiceIds"`
+	Date           string   `json:"date,omitempty"`
+	Narration      string   `json:"Narration,omitempty"`
+	Title          string   `json:"title,omitempty"`
+	Mode           string   `json:"mode"`
+	Debit          int      `json:"debit"`
+	Credit         int      `json:"credit"`
+	ClosingBalance int      `json:"closingBalance"`
+	Label          []string `json:"label"`
+	For            []string `json:"for"`
+	Notes          string   `json:"notes,omitempty"`
 }
 
 // DisplayName returns whichever name field is populated.

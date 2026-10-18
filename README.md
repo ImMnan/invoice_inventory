@@ -37,8 +37,38 @@ stock of the same product ID, color and size. This also works when the design or
 its color is missing. Other printed designs are never used as substitutes, and
 plain sales consume only plain stock. Plain sales are allocated before design
 fallbacks. Insufficient combined stock rejects the update without saving it.
-Remaining-stock previews show the design and plain variants actually consumed;
-sale history and invoices retain the requested design.
+Remaining-stock previews for both sales and purchases show every color and
+design (including `plain`) for each product ID affected by the preview, not
+just the variants consumed or purchased. Quantities are accumulated across
+existing stock records, and size totals and the grand total include all displayed
+variants. Print/color filters select the invoice lines used for the preview;
+the remaining-stock summary still includes all variants of those products.
+Unrelated product IDs are excluded. Sale history and invoices retain the
+requested design.
 
 `update invoice` updates payments only. Stock quantities are updated through
 `apply`.
+
+## Transactions
+
+Configure `transactionData` under `data` (or the selected `dataJan` through
+`dataDec` section) in your LVS configuration to point to the transaction JSON.
+Transaction records use arrays for `invoiceIds`, `label`, and `for`.
+
+```sh
+lvs get transaction
+lvs get transaction SK25CPQ10303 --label sales --for Ankit
+lvs get transaction -l sales -f Ankit --csv
+lvs get transaction --show-labels
+lvs get transaction --for Ankit --show-labels --csv
+```
+
+Invoice, label, and recipient filters combine with AND. Invoice IDs match
+exactly; labels and recipients use case-insensitive exact matching with
+surrounding whitespace ignored. Any matching array entry satisfies its filter.
+`--show-labels` adds a `LABEL` column to both table and CSV output, showing each
+transaction's nonblank labels separated by commas in their stored order.
+Transactions without labels have an empty label cell. Without the flag, the
+column is omitted. `--csv` produces CSV including a header.
+Filtering preserves each transaction's
+stored closing balance; it does not recalculate balances.

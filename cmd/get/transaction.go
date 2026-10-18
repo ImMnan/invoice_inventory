@@ -1,0 +1,125 @@
+package get
+
+import (
+	"encoding/csv"
+	"encoding/json"
+	"fmt"
+	"io"
+	"strconv"
+	"strings"
+	"text/tabwriter"
+
+	"github.com/immnan/invoice_invoice/pkg"
+	"github.com/spf13/cobra"
+)
+
+type TransactionFilter struct {
+	InvoiceID string
+	Label     string
+	For       string
+}
+
+type transactionOptions struct {
+	Filter     TransactionFilter
+	Month      int
+	CSV        bool
+	ShowLabels bool
+}
+
+var transactionCmd = TransactionCommand()
+
+func TransactionCommand() *cobra.Command {
+	var options transactionOptions
+	cmd := &cobra.Command{
+		Use:     "transaction [invoice_id]",
+		Short:   "Get transactions for the organization",
+		Aliases: []string{"transactions", "txn"},
+		Long:    "Fetch transactions for the configured month, optionally filtered by invoice, label, and recipient.",
+		Args:    cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			options.Filter.InvoiceID = ""
+			if len(args) > 0 {
+				options.Filter.InvoiceID = args[0]
+			}
+			return printTransactions(cmd.OutOrStdout(), options)
+		},
+	}
+	cmd.Flags().BoolVar(&options.CSV, "csv", false, "Output in CSV format")
+	cmd.Flags().StringVarP(&options.Filter.Label, "label", "l", "", "Filter transactions by label")
+	cmd.Flags().StringVarP(&options.Filter.For, "for", "f", "", "Filter transactions by 'for' field")
+	cmd.Flags().BoolVar(&options.ShowLabels, "show-labels", false, "Show a label column for matching transactions")
+	cmd.Flags().IntVarP(&options.Month, "month", "m", 0, "Month to fetch transactions for (default is current month)")
+	return cmd
+}
+
+func init() {
+	GetCmd.AddCommand(transactionCmd)
+}
+
+func printTransactions(output io.Writer, options transactionOptions) error {
+	if options.Month < 0 || options.Month > 13 {
+		return fmt.Errorf("month must be between 0 and 13 (0: current, 1-12: calendar month, 13: test)")
+	}
+	_, _, _, _, transactionDB, err := ConfigData(options.Month)
+	if err != nil {
+		return fmt.Errorf("fetching config data: %w", err)
+	}
+	if transactionDB == "" {
+		return fmt.Errorf("transactionData is not configured for month %d", options.Month)
+	}
+	db := &pkg.JsLocalDB{TransactionFile: transactionDB}
+	data, err := db.Transactions()
+	if err != nil {
+		return fmt.Errorf("fetching transaction data: %w", err)
+	}
+
+	var transactions []pkg.Transactions
+	if err := json.Unmarshal(data, &transactions); err != nil {
+		return fmt.Errorf("unmarshalling transaction data: %w", err)
+	}
+	return writeTransactions(output, transactions, options)
+}
+
+func writeTransactions(output io.Writer, transactions []pkg.Transactions, options transactionOptions) error {
+	rows := [][]string{{"ID", "INVOICE", "DATE", "NARRATION", "TITLE", "MODE", "DEBIT", "CREDIT", "BALANCE", "FOR"}}
+	if options.ShowLabels {
+		rows[0] = append(rows[0], "LABEL")
+	}
+	for _, txn := range transactions {
+		if !options.Filter.matches(txn) {
+			continue
+		}
+		row := []string{
+			txn.Id, strings.Join(txn.InvoiceIds, ", "), txn.Date, txn.Narration,
+			txn.Title, txn.Mode, strconv.Itoa(txn.Debit), strconv.Itoa(txn.Credit),
+			strconv.Itoa(txn.ClosingBalance), strings.Join(txn.For, ", "),
+		}
+		if options.ShowLabels {
+			var labels []string
+			for _, label := range txn.Label {
+				if label = strings.TrimSpace(label); label != "" {
+					labels = append(labels, label)
+				}
+			}
+			row = append(row, strings.Join(labels, ", "))
+		}
+		rows = append(rows, row)
+	}
+	if options.CSV {
+		writer := csv.NewWriter(output)
+		if err := writer.WriteAll(rows); err != nil {
+			return fmt.Errorf("writing transaction CSV: %w", err)
+		}
+		return nil
+	}
+	writer := tabwriter.NewWriter(output, 0, 0, 2, ' ', 0)
+	for _, row := range rows {
+		if _, err := fmt.Fprintln(writer, strings.Join(row, "\t")); err != nil {
+			return fmt.Errorf("writing transaction output: %w", err)
+		}
+	}
+	if err := writer.Flush(); err != nil {
+		return fmt.Errorf("writing transaction output: %w", err)
+	}
+	return nil
+}

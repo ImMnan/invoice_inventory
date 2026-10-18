@@ -13,7 +13,7 @@ import (
 )
 
 func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate, isSale bool, colorFilter, printFilter string, formatCsv bool) error {
-	_, currentStock, err := existData.GetExistingStock()
+	existingEntries, currentStock, err := existData.GetExistingStock()
 	if err != nil {
 		return fmt.Errorf("failed to load existing inventory: %w", err)
 	}
@@ -35,13 +35,28 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 		entries = stockUpdate.PurchaseEntries
 	}
 
-	// Track which product+color pairs are impacted
+	// Display every stock variant of products affected by the preview.
 	type productColor struct{ productID, color, printName, stockKey string }
-	impacted := make(map[string]productColor)
+	impactedProducts := make(map[string]bool)
+	printNames := make(map[string]string)
+	for _, entry := range existingEntries {
+		if entry.Type != "in_stock" {
+			continue
+		}
+		for _, product := range entry.Product {
+			printNames[pkg.StockKey(product.ProductID, product.Print)] = pkg.NormalizePrint(product.Print)
+		}
+	}
 
 	var products []pkg.ProductStruct
 	for _, item := range entries {
 		products = append(products, item.Product...)
+	}
+	for _, product := range products {
+		key := pkg.StockKey(product.ProductID, product.Print)
+		if _, exists := printNames[key]; !exists {
+			printNames[key] = pkg.NormalizePrint(product.Print)
+		}
 	}
 	if isSale {
 		sort.SliceStable(products, func(first, second int) bool {
@@ -70,17 +85,11 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 				continue
 			}
 			if isSale {
-				usedKeys, err := pkg.DeductStock(remainingStock, productID, color, quantities)
+				_, err := pkg.DeductStock(remainingStock, productID, color, quantities)
 				if err != nil {
 					return err
 				}
-				for _, key := range usedKeys {
-					printName := pkg.NormalizePrint(product.Print)
-					if key == pkg.StockKey(product.ProductID, "plain") {
-						printName = "plain"
-					}
-					impacted[key+"\x00"+color] = productColor{product.ProductID, color, printName, key}
-				}
+				impactedProducts[product.ProductID] = true
 				continue
 			}
 			if remainingStock[productID][color] == nil {
@@ -96,12 +105,18 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 					remainingStock[productID][color][i] += qty
 				}
 			}
-			impacted[productID+"\x00"+color] = productColor{product.ProductID, color, pkg.NormalizePrint(product.Print), productID}
+			impactedProducts[product.ProductID] = true
 		}
 	}
 	var rows []productColor
-	for _, row := range impacted {
-		rows = append(rows, row)
+	for key, colors := range remainingStock {
+		productID, _, _ := strings.Cut(key, "\x00")
+		if !impactedProducts[productID] {
+			continue
+		}
+		for color := range colors {
+			rows = append(rows, productColor{productID, color, printNames[key], key})
+		}
 	}
 	sort.Slice(rows, func(first, second int) bool {
 		left, right := rows[first], rows[second]
@@ -204,7 +219,7 @@ func displayRemainingStock(existData *pkg.JsLocalDB, stockUpdate pkg.StockUpdate
 	}
 
 	if isSale && colorFilter != "" {
-		fmt.Printf("\n[*] Remaining stock for color '%s': %d pieces\n", colorFilter, grandTotal)
+		fmt.Printf("\n[*] Remaining stock for products with invoice color '%s' (all colors/designs): %d pieces\n", colorFilter, grandTotal)
 	}
 
 	return nil

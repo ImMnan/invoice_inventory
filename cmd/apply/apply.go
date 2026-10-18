@@ -44,7 +44,7 @@ func init() {
 
 func applyStkInvoice(fileName string, confirm, formatCsv bool, month int, colorFilter, printFilter string) {
 
-	inventoryDB, customerDB, invoiceDB, productDB, err := get.ConfigData(month)
+	inventoryDB, customerDB, invoiceDB, productDB, _, err := get.ConfigData(month)
 	if err != nil {
 		fmt.Printf("Error fetching config data for month %d: %v\n", month, err)
 		return

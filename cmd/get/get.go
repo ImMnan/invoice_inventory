@@ -2,6 +2,7 @@ package get
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -225,7 +226,7 @@ func sortStockRows(rows []stockRow) {
 	})
 }
 
-func ConfigData(month int) (inventoryDB, customerDB, invoiceDB, productDB string, logErr error) {
+func ConfigData(month int) (inventoryDB, customerDB, invoiceDB, productDB, transactionDB string, logErr error) {
 
 	vp := viper.New()
 	vp.SetConfigName("lvsConfig")
@@ -235,9 +236,9 @@ func ConfigData(month int) (inventoryDB, customerDB, invoiceDB, productDB string
 	vp.AddConfigPath(".")
 	err := vp.ReadInConfig()
 	if err != nil {
-		return "", "", "", "", err
+		return "", "", "", "", "", err
 	}
-	var inventoryData, customerData, invoiceData, productData string
+	var inventoryData, customerData, invoiceData, productData, transactionData string
 	monthSuffixes := []string{"", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Test"}
 	suffix := monthSuffixes[month]
 	prefix := "data"
@@ -248,6 +249,28 @@ func ConfigData(month int) (inventoryDB, customerDB, invoiceDB, productDB string
 	customerData = vp.GetString(prefix + ".customersData")
 	invoiceData = vp.GetString(prefix + ".invoicesData")
 	productData = vp.GetString(prefix + ".productsData")
+	transactionData = vp.GetString(prefix + ".transactionData")
 
-	return inventoryData, customerData, invoiceData, productData, nil
+	return inventoryData, customerData, invoiceData, productData, transactionData, nil
+}
+
+func (filter TransactionFilter) matches(transaction pkg.Transactions) bool {
+	if filter.InvoiceID != "" && !slices.Contains(transaction.InvoiceIds, filter.InvoiceID) {
+		return false
+	}
+	return matchesTransactionField(transaction.Label, filter.Label) &&
+		matchesTransactionField(transaction.For, filter.For)
+}
+
+func matchesTransactionField(values []string, query string) bool {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return true
+	}
+	for _, value := range values {
+		if strings.EqualFold(strings.TrimSpace(value), query) {
+			return true
+		}
+	}
+	return false
 }
