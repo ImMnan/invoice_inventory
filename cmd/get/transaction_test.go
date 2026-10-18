@@ -63,7 +63,7 @@ func TestTransactionFilter(t *testing.T) {
 
 func TestTransactionCSV(t *testing.T) {
 	var output bytes.Buffer
-	if err := writeTransactions(&output, transactionFixtures(), transactionOptions{CSV: true}); err != nil {
+	if err := writeTransactions(&output, transactionFixtures(), transactionOptions{CSV: true, Output: "wide"}); err != nil {
 		t.Fatal(err)
 	}
 	rows, err := csv.NewReader(&output).ReadAll()
@@ -90,7 +90,7 @@ func TestTransactionDecimalOutput(t *testing.T) {
 			t.Fatal(err)
 		}
 		var output bytes.Buffer
-		if err := writeTransactions(&output, transactions, transactionOptions{CSV: true}); err != nil {
+		if err := writeTransactions(&output, transactions, transactionOptions{CSV: true, Output: "wide"}); err != nil {
 			t.Fatal(err)
 		}
 		rows, err := csv.NewReader(&output).ReadAll()
@@ -100,6 +100,91 @@ func TestTransactionDecimalOutput(t *testing.T) {
 		if rows[1][3] != "UPI-PAYMENT" || rows[1][6] != "0" || rows[1][7] != "10.25" || rows[1][8] != "110.25" {
 			t.Fatalf("incorrect decimal output: %q", rows[1])
 		}
+	}
+}
+
+func TestTransactionNarrationTruncation(t *testing.T) {
+	for _, narration := range []string{"", "Short payment", strings.Repeat("a", 25), strings.Repeat("b", 26), strings.Repeat("\u0a95", 26)} {
+		t.Run(narration, func(t *testing.T) {
+			want := []rune(narration)
+			if len(want) > 25 {
+				want = want[:25]
+			}
+			transactions := []pkg.Transactions{{Id: "txn", Narration: narration}}
+			for _, asCSV := range []bool{false, true} {
+				var output bytes.Buffer
+				if err := writeTransactions(&output, transactions, transactionOptions{CSV: asCSV}); err != nil {
+					t.Fatal(err)
+				}
+				if asCSV {
+					rows, err := csv.NewReader(&output).ReadAll()
+					if err != nil {
+						t.Fatal(err)
+					}
+					if rows[1][3] != string(want) {
+						t.Fatalf("narration = %q, want %q", rows[1][3], string(want))
+					}
+				} else if string(want) != "" && !strings.Contains(output.String(), string(want)) {
+					t.Fatalf("table missing narration %q: %s", string(want), output.String())
+				}
+				if len([]rune(narration)) > 25 && strings.Contains(output.String(), narration) {
+					t.Fatal("output contains untruncated narration")
+				}
+				if transactions[0].Narration != narration {
+					t.Fatal("stored narration was modified")
+				}
+			}
+		})
+	}
+}
+
+func TestTransactionWideOutput(t *testing.T) {
+	narration := "UPI-" + strings.Repeat("payment", 8)
+	transactions := []pkg.Transactions{{Id: "unique-transaction-id", Narration: narration, Label: []string{"sales"}}}
+	for _, asCSV := range []bool{false, true} {
+		for _, wide := range []bool{false, true} {
+			for _, labels := range []bool{false, true} {
+				options := transactionOptions{CSV: asCSV, ShowLabels: labels}
+				if wide {
+					options.Output = "wide"
+				}
+				var output bytes.Buffer
+				if err := writeTransactions(&output, transactions, options); err != nil {
+					t.Fatal(err)
+				}
+				if !strings.Contains(output.String(), transactions[0].Id) ||
+					strings.Contains(output.String(), narration) != wide {
+					t.Fatalf("csv=%v wide=%v: incorrect ID or narration output: %s", asCSV, wide, output.String())
+				}
+				if asCSV {
+					rows, err := csv.NewReader(&output).ReadAll()
+					if err != nil {
+						t.Fatal(err)
+					}
+					columns, narrationColumn := 10, 3
+					if rows[0][0] != "ID" || rows[1][0] != transactions[0].Id {
+						t.Fatal("output missing ID column")
+					}
+					if labels {
+						columns++
+					}
+					if len(rows[0]) != columns || len(rows[1]) != columns {
+						t.Fatalf("unexpected CSV shape: %v", rows)
+					}
+					want := narration
+					if !wide {
+						want = string([]rune(narration)[:25])
+					}
+					if rows[1][narrationColumn] != want {
+						t.Fatalf("narration = %q, want %q", rows[1][narrationColumn], want)
+					}
+				}
+			}
+		}
+	}
+	var output bytes.Buffer
+	if err := writeTransactions(&output, transactions, transactionOptions{Output: "invalid"}); err == nil || output.Len() != 0 {
+		t.Fatal("invalid output mode must fail without writing output")
 	}
 }
 
@@ -173,7 +258,7 @@ func TestTransactionLabels(t *testing.T) {
 
 func TestTransactionTable(t *testing.T) {
 	var output bytes.Buffer
-	options := transactionOptions{Filter: TransactionFilter{InvoiceID: "INV-2"}}
+	options := transactionOptions{Filter: TransactionFilter{InvoiceID: "INV-2"}, Output: "wide"}
 	if err := writeTransactions(&output, transactionFixtures(), options); err != nil {
 		t.Fatal(err)
 	}
@@ -225,6 +310,9 @@ func TestTransactionCommand(t *testing.T) {
 		wantErr string
 	}{
 		{args: []string{"INV-2", "-l", "SALES", "-f", "ankit", "--csv", "-m", "10"}, want: "INV-1, INV-2"},
+		{args: []string{"-o", "wide", "--csv"}, want: "ID,INVOICE,DATE,NARRATION"},
+		{args: []string{"--output", "wide"}, want: "ID"},
+		{args: []string{"-o", "invalid"}, wantErr: "unsupported output"},
 		{args: []string{"--label", "sales", "--for", "Ankit", "--show-labels", "--csv"}, want: "\"Ankit, Madhavbhai\",\"sales, CO180G-SRS\"\n"},
 		{args: []string{"--month", "-1"}, wantErr: "month must be"},
 		{args: []string{"--month", "14"}, wantErr: "month must be"},

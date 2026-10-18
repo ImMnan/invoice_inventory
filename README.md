@@ -57,6 +57,7 @@ Transaction records use arrays for `invoiceIds`, `label`, and `for`.
 
 ```sh
 lvs get transaction
+lvs get transaction -o wide
 lvs get transaction SK25CPQ10303 --label sales --for Ankit
 lvs get transaction -l sales -f Ankit --csv
 lvs get transaction --show-labels
@@ -70,6 +71,9 @@ surrounding whitespace ignored. Any matching array entry satisfies its filter.
 transaction's nonblank labels separated by commas in their stored order.
 Transactions without labels have an empty label cell. Without the flag, the
 column is omitted. `--csv` produces CSV including a header.
+By default, narration is limited to its first 25 characters. Use `-o wide`
+(or `--output wide`) to show complete narration. IDs are always shown.
+This applies to both table and CSV output; stored records are unchanged.
 Filtering preserves each transaction's
 stored closing balance; it does not recalculate balances.
 

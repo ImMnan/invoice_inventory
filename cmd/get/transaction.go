@@ -23,6 +23,7 @@ type transactionOptions struct {
 	Month      int
 	CSV        bool
 	ShowLabels bool
+	Output     string
 }
 
 var transactionCmd = TransactionCommand()
@@ -44,6 +45,7 @@ func TransactionCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&options.CSV, "csv", false, "Output in CSV format")
+	cmd.Flags().StringVarP(&options.Output, "output", "o", "", "Use wide to show complete narration")
 	cmd.Flags().StringVarP(&options.Filter.Label, "label", "l", "", "Filter transactions by label")
 	cmd.Flags().StringVarP(&options.Filter.For, "for", "f", "", "Filter transactions by 'for' field")
 	cmd.Flags().BoolVar(&options.ShowLabels, "show-labels", false, "Show a label column for matching transactions")
@@ -80,6 +82,10 @@ func printTransactions(output io.Writer, options transactionOptions) error {
 }
 
 func writeTransactions(output io.Writer, transactions []pkg.Transactions, options transactionOptions) error {
+	if options.Output != "" && options.Output != "wide" {
+		return fmt.Errorf("unsupported output %q: use -o wide or omit --output", options.Output)
+	}
+	wide := options.Output == "wide"
 	rows := [][]string{{"ID", "INVOICE", "DATE", "NARRATION", "TITLE", "MODE", "DEBIT", "CREDIT", "BALANCE", "FOR"}}
 	if options.ShowLabels {
 		rows[0] = append(rows[0], "LABEL")
@@ -88,8 +94,12 @@ func writeTransactions(output io.Writer, transactions []pkg.Transactions, option
 		if !options.Filter.matches(txn) {
 			continue
 		}
+		narration := []rune(txn.Narration)
+		if !wide && len(narration) > 25 {
+			narration = narration[:25]
+		}
 		row := []string{
-			txn.Id, strings.Join(txn.InvoiceIds, ", "), txn.Date, txn.Narration,
+			txn.Id, strings.Join(txn.InvoiceIds, ", "), txn.Date, string(narration),
 			txn.Title, txn.Mode, txn.Debit.String(), txn.Credit.String(),
 			txn.ClosingBalance.String(), strings.Join(txn.For, ", "),
 		}
