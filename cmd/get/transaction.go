@@ -86,7 +86,7 @@ func writeTransactions(output io.Writer, transactions []pkg.Transactions, option
 		return fmt.Errorf("unsupported output %q: use -o wide or omit --output", options.Output)
 	}
 	wide := options.Output == "wide"
-	rows := [][]string{{"ID", "INVOICE", "DATE", "NARRATION", "TITLE", "MODE", "DEBIT", "CREDIT", "BALANCE", "FOR"}}
+	rows := [][]string{{"ID", "DATE", "NARRATION", "TITLE", "MODE", "DEBIT", "CREDIT", "BALANCE", "FOR", "INVOICE"}}
 	if options.ShowLabels {
 		rows[0] = append(rows[0], "LABEL")
 	}
@@ -99,9 +99,10 @@ func writeTransactions(output io.Writer, transactions []pkg.Transactions, option
 			narration = narration[:25]
 		}
 		row := []string{
-			txn.Id, strings.Join(txn.InvoiceIds, ", "), txn.Date, string(narration),
+			txn.Id, txn.Date, string(narration),
 			txn.Title, txn.Mode, txn.Debit.String(), txn.Credit.String(),
 			txn.ClosingBalance.String(), strings.Join(txn.For, ", "),
+			strings.Join(txn.InvoiceIds, ", "),
 		}
 		if options.ShowLabels {
 			var labels []string
