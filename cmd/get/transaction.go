@@ -90,10 +90,13 @@ func writeTransactions(output io.Writer, transactions []pkg.Transactions, option
 	if options.ShowLabels {
 		rows[0] = append(rows[0], "LABEL")
 	}
+	var totalDebit, totalCredit pkg.Money
 	for _, txn := range transactions {
 		if !options.Filter.matches(txn) {
 			continue
 		}
+		totalDebit += txn.Debit
+		totalCredit += txn.Credit
 		narration := []rune(txn.Narration)
 		if !wide && len(narration) > 25 {
 			narration = narration[:25]
@@ -115,6 +118,21 @@ func writeTransactions(output io.Writer, transactions []pkg.Transactions, option
 		}
 		rows = append(rows, row)
 	}
+	percentage := "0%"
+	if totalDebit != 0 {
+		difference := (float64(totalCredit) - float64(totalDebit)) / float64(totalDebit) * 100
+		value := strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.2f", difference), "0"), ".")
+		if value == "-0" {
+			value = "0"
+		}
+		percentage = value + "%"
+	} else if totalCredit != 0 {
+		percentage = "N/A"
+	}
+	total := make([]string, len(rows[0]))
+	total[0] = "TOTAL"
+	total[5], total[6], total[7] = totalDebit.String(), totalCredit.String(), percentage
+	rows = append(rows, total)
 	if options.CSV {
 		writer := csv.NewWriter(output)
 		if err := writer.WriteAll(rows); err != nil {

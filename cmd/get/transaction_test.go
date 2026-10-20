@@ -114,10 +114,10 @@ func TestTransactionCSV(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 4 || len(rows[0]) != 10 {
+	if len(rows) != 5 || len(rows[0]) != 10 {
 		t.Fatalf("unexpected CSV shape: %v", rows)
 	}
-	want := []string{"sale", "INV-1, INV-2", "2026-10-20", "Payment", "Sale, \"goods\"\nreceived", "UPI", "0", "50000", "150000", "Ankit, Madhavbhai"}
+	want := []string{"sale", "2026-10-20", "Payment", "Sale, \"goods\"\nreceived", "UPI", "0", "50000", "150000", "Ankit, Madhavbhai", "INV-1, INV-2"}
 	if !reflect.DeepEqual(rows[2], want) {
 		t.Fatalf("CSV row = %q, want %q", rows[2], want)
 	}
@@ -141,7 +141,7 @@ func TestTransactionDecimalOutput(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if rows[1][3] != "UPI-PAYMENT" || rows[1][6] != "0" || rows[1][7] != "10.25" || rows[1][8] != "110.25" {
+		if rows[1][2] != "UPI-PAYMENT" || rows[1][5] != "0" || rows[1][6] != "10.25" || rows[1][7] != "110.25" {
 			t.Fatalf("incorrect decimal output: %q", rows[1])
 		}
 	}
@@ -165,8 +165,8 @@ func TestTransactionNarrationTruncation(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					if rows[1][3] != string(want) {
-						t.Fatalf("narration = %q, want %q", rows[1][3], string(want))
+					if rows[1][2] != string(want) {
+						t.Fatalf("narration = %q, want %q", rows[1][2], string(want))
 					}
 				} else if string(want) != "" && !strings.Contains(output.String(), string(want)) {
 					t.Fatalf("table missing narration %q: %s", string(want), output.String())
@@ -205,7 +205,7 @@ func TestTransactionWideOutput(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					columns, narrationColumn := 10, 3
+					columns, narrationColumn := 10, 2
 					if rows[0][0] != "ID" || rows[1][0] != transactions[0].Id {
 						t.Fatal("output missing ID column")
 					}
@@ -264,7 +264,7 @@ func TestTransactionLabels(t *testing.T) {
 				}
 				if !asCSV {
 					lines := strings.Split(strings.TrimSuffix(output.String(), "\n"), "\n")
-					if len(lines) != len(tt.want)+1 || !strings.HasSuffix(lines[0], "LABEL") {
+					if len(lines) != len(tt.want)+2 || !strings.HasSuffix(lines[0], "LABEL") {
 						t.Fatalf("unexpected table shape: %q", output.String())
 					}
 					for i, label := range tt.want {
@@ -282,17 +282,79 @@ func TestTransactionLabels(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if len(rows) != len(transactionRows) || len(rows) != len(tt.want)+1 {
+				if len(rows) != len(transactionRows) || len(rows) != len(tt.want)+2 {
 					t.Fatalf("unexpected CSV row count: %v", rows)
 				}
 				for i, row := range rows {
 					label := "LABEL"
-					if i > 0 {
+					if i == len(rows)-1 {
+						label = ""
+					} else if i > 0 {
 						label = tt.want[i-1]
 					}
 					want := append(transactionRows[i], label)
 					if !reflect.DeepEqual(row, want) {
 						t.Fatalf("row = %q, want %q", row, want)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestTransactionTotals(t *testing.T) {
+	tests := []struct {
+		name       string
+		debit      pkg.Money
+		credit     pkg.Money
+		filter     TransactionFilter
+		wantDebit  string
+		wantCredit string
+		percentage string
+	}{
+		{"positive", 10000, 12500, TransactionFilter{}, "100", "125", "25%"},
+		{"negative", 10000, 9000, TransactionFilter{}, "100", "90", "-10%"},
+		{"equal", 10000, 10000, TransactionFilter{}, "100", "100", "0%"},
+		{"fractional", 300, 400, TransactionFilter{}, "3", "4", "33.33%"},
+		{"decimal totals", 1025, 1230, TransactionFilter{}, "10.25", "12.30", "20%"},
+		{"zero debit", 0, 10000, TransactionFilter{}, "0", "100", "N/A"},
+		{"zero credit", 10000, 0, TransactionFilter{}, "100", "0", "-100%"},
+		{"both zero", 0, 0, TransactionFilter{}, "0", "0", "0%"},
+		{"invoice", 10000, 12500, TransactionFilter{InvoiceID: "INV"}, "40", "50", "25%"},
+		{"label", 10000, 12500, TransactionFilter{Label: []string{"sales"}}, "40", "50", "25%"},
+		{"recipient", 10000, 12500, TransactionFilter{For: "Ankit"}, "40", "50", "25%"},
+		{"combined", 10000, 12500, TransactionFilter{InvoiceID: "INV", Label: []string{"sales"}, For: "Ankit"}, "40", "50", "25%"},
+		{"no matches", 10000, 12500, TransactionFilter{InvoiceID: "missing"}, "0", "0", "0%"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			transactions := []pkg.Transactions{
+				{Id: "matched", Debit: tt.debit * 2 / 5, Credit: tt.credit * 2 / 5, InvoiceIds: []string{"INV"}, Label: []string{"sales"}, For: []string{"Ankit"}},
+				{Id: "other", Debit: tt.debit - tt.debit*2/5, Credit: tt.credit - tt.credit*2/5},
+			}
+			for _, asCSV := range []bool{false, true} {
+				for _, labels := range []bool{false, true} {
+					var output bytes.Buffer
+					options := transactionOptions{CSV: asCSV, ShowLabels: labels, Filter: tt.filter}
+					if err := writeTransactions(&output, transactions, options); err != nil {
+						t.Fatal(err)
+					}
+					if asCSV {
+						rows, err := csv.NewReader(&output).ReadAll()
+						if err != nil {
+							t.Fatal(err)
+						}
+						want := make([]string, len(rows[0]))
+						want[0], want[5], want[6], want[7] = "TOTAL", tt.wantDebit, tt.wantCredit, tt.percentage
+						if !reflect.DeepEqual(rows[len(rows)-1], want) {
+							t.Fatalf("total = %q, want %q", rows[len(rows)-1], want)
+						}
+					} else {
+						lines := strings.Split(strings.TrimSpace(output.String()), "\n")
+						want := []string{"TOTAL", tt.wantDebit, tt.wantCredit, tt.percentage}
+						if got := strings.Fields(lines[len(lines)-1]); !reflect.DeepEqual(got, want) {
+							t.Fatalf("total = %q, want %q", got, want)
+						}
 					}
 				}
 			}
@@ -356,10 +418,10 @@ func TestTransactionCommand(t *testing.T) {
 		{args: []string{"INV-2", "-l", "SALES", "-f", "ankit", "--csv", "-m", "10"}, want: "INV-1, INV-2"},
 		{args: []string{"INV-2", "-l", "sales", "-l", "co180g-srs", "--csv"}, want: "INV-1, INV-2"},
 		{args: []string{"INV-2", "-l", "sales,co180g-srs", "--csv"}, want: "INV-1, INV-2"},
-		{args: []string{"-o", "wide", "--csv"}, want: "ID,INVOICE,DATE,NARRATION"},
+		{args: []string{"-o", "wide", "--csv"}, want: "ID,DATE,NARRATION"},
 		{args: []string{"--output", "wide"}, want: "ID"},
 		{args: []string{"-o", "invalid"}, wantErr: "unsupported output"},
-		{args: []string{"--label", "sales", "--for", "Ankit", "--show-labels", "--csv"}, want: "\"Ankit, Madhavbhai\",\"sales, CO180G-SRS\"\n"},
+		{args: []string{"--label", "sales", "--for", "Ankit", "--show-labels", "--csv"}, want: "\"Ankit, Madhavbhai\",\"INV-1, INV-2\",\"sales, CO180G-SRS\"\n"},
 		{args: []string{"--month", "-1"}, wantErr: "month must be"},
 		{args: []string{"--month", "14"}, wantErr: "month must be"},
 		{args: []string{"--month", "1"}, wantErr: "transactionData is not configured"},
