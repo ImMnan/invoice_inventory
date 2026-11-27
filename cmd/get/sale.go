@@ -53,7 +53,7 @@ type SaleFilter struct {
 
 func printSales(productID, colorFlag, printFlag string, printedFlag bool, month int) {
 
-	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(month) // Assuming 0 for current month
+	inventoryDB, customerDB, invoiceDB, productDB, _, err := ConfigData(month) // Assuming 0 for current month
 	if err != nil {
 		fmt.Println("Error fetching config data:", err)
 		return

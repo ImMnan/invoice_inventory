@@ -55,7 +55,7 @@ func updateInvoiceById(invoices []string, month, pay int, paid bool) {
 		return
 	}
 
-	_, _, invoiceDB, _, err := get.ConfigData(month)
+	_, _, invoiceDB, _, _, err := get.ConfigData(month)
 	if err != nil {
 		fmt.Println("Error fetching config data:", err)
 		return

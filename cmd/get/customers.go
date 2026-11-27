@@ -68,7 +68,7 @@ func init() {
 }
 
 func PrintCustomers(customerName, customerID, customerAddress string, rating int) {
-	inventoryDB, customerDB, invoiceDB, productDB, err := ConfigData(0)
+	inventoryDB, customerDB, invoiceDB, productDB, _, err := ConfigData(0)
 	if err != nil {
 		fmt.Println("Error fetching config data:", err)
 		return
